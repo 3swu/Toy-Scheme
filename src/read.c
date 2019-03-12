@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
 
 #define MAXSIZE 1024
 
@@ -67,4 +68,45 @@ char* buf_pre_handle(char* pre_buf) { /* add space and remove comments */
     }
     buf[buf_i] = '\0';
     return buf;
+}
+
+token* gen_token(char* buf) {
+    token* token_list, * token_p; /*init token list with head token*/
+    token_list = (token*) malloc(sizeof(token));
+    if(token_list == NULL)
+        error_handle(stderr, "out of memory while parse token", EXIT_FAILURE);
+    token_list->value = "Head Token";
+    token_p = token_list;
+
+    int i = 0, j = 0;
+    while(1) {
+        token* t = (token*) malloc(sizeof(token));
+        t->value = (char*) malloc(TOKEN_MAX * sizeof(char));
+        if(t == NULL || t->value == NULL)
+            error_handle(stderr, "out of memory while parse token", EXIT_FAILURE);
+        t->next = NULL;
+
+        int len = strlen(buf);
+        for(; buf[i] == ' ' || buf[i] == '\n'; i++)
+            if(i >= strlen(buf) - 1 )
+                return token_list;
+
+        for(j = i; buf[j] != ' '; j++);
+        if(j - i >= TOKEN_MAX) {
+            t->value = (char*) realloc(t->value, TOKEN_MAX * 10 * sizeof(char));
+            if(t->value == NULL) {
+                error_handle(stderr, "out of memory while parse token", EXIT_FAILURE);
+            }
+        }
+
+        int t_i = 0;
+        for(int k = i; k < j; k++, t_i++)
+            t->value[t_i] = buf[k];
+        t->value[t_i] = '\0';
+        i = j;
+
+        token_p->next = t;
+        token_p = t;
+    }
+
 }
