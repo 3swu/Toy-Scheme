@@ -11,7 +11,7 @@ object* alloc_object() {
     object* obj = (object*) malloc (sizeof(object));
 
     if(obj == NULL){
-        error_handle(stderr, "out of memory", 1);
+        error_handle(stderr, "out of memory", EXIT_FAILURE);
     }
 }
 
