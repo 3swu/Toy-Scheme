@@ -68,6 +68,8 @@ extern object* car(object* pair);
 
 extern object* cdr(object* pair);
 
+extern object* cons(object* car, object* cdr);
+
 extern void set_car(object* pair, object* car);
 
 extern void set_cdr(object* pair, object* cdr);

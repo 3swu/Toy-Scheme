@@ -55,6 +55,15 @@ object* cdr(object* pair) {
     return pair->data.pair.cdr;
 }
 
+object* cons(object* car, object* cdr) {
+    object* pair = alloc_object();
+    pair->type = PAIR;
+    pair->data.pair.car = car;
+    pair->data.pair.cdr = cdr;
+
+    return pair;
+}
+
 void set_car(object* pair, object* car) {
     pair->data.pair.car = car;
 }
