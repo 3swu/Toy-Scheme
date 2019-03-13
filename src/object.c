@@ -71,3 +71,17 @@ void set_car(object* pair, object* car) {
 void set_cdr(object* pair, object* cdr) {
     pair->data.pair.cdr = cdr;
 }
+
+object* make_the_empty_list() {
+    object* obj = alloc_object();
+    obj->type = THE_EMPTY_LIST;
+    return obj;
+}
+
+object* make_fixnum(char* str) {
+     object* obj = alloc_object();
+     obj->type = FIXNUM;
+     obj->data.fixnum.value = atol(str);
+
+     return obj;
+}

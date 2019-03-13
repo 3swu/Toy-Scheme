@@ -74,4 +74,29 @@ extern void set_car(object* pair, object* car);
 
 extern void set_cdr(object* pair, object* cdr);
 
+/**** object constructor ****/
+extern object* make_the_empty_list();
+
+extern object* make_fixnum(char* str);
+
+object* true_obj;
+object* false_obj;
+object* the_empty_list;
+object *symbol_table;
+object *quote_symbol;
+object *define_symbol;
+object *set_symbol;
+object *ok_symbol;
+object *if_symbol;
+object *lambda_symbol;
+object *begin_symbol;
+object *cond_symbol;
+object *else_symbol;
+object *let_symbol;
+object *and_symbol;
+object *or_symbol;
+object *eof_object;
+object *the_empty_environment;
+object *the_global_environment;
+
 #endif //SCHEME_OBJECT_H
