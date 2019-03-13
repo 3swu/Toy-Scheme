@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <ctype.h>
 
 #define MAXSIZE 1024
 
@@ -91,7 +92,13 @@ token* gen_token(char* buf) {
             if(i >= strlen(buf) - 1 )
                 return token_list;
 
-        for(j = i; buf[j] != ' '; j++);
+        for(j = i; buf[j] != ' '; j++)
+            if(buf[j] == '\0') {
+                t->value = ")";
+                token_p->next = t;
+                return token_list;
+            }
+
         if(j - i >= TOKEN_MAX) {
             t->value = (char*) realloc(t->value, TOKEN_MAX * 10 * sizeof(char));
             if(t->value == NULL) {
@@ -109,4 +116,67 @@ token* gen_token(char* buf) {
         token_p = t;
     }
 
+}
+
+token_list* gen_token_list(token* token_l) {
+    token_list* list = (token_list*) malloc(sizeof(token_list));
+    if(list == NULL)
+        error_handle(stderr, "out of memory while generate token list", EXIT_FAILURE);
+
+    list->haed_token = token_l;
+    list->token_pointer = token_l->next;
+
+    return list;
+}
+
+object* parse(token_list* list) {
+    char* token_value = list->token_pointer->value;
+
+    if(strcmp(token_value, "(") == 0) {
+        list_iter(list);
+        return parse_pair(list);
+    }
+
+//    if(strcmp(token_value, ")") == 0) {
+//        list_iter(list);
+//        return the_empty_list;
+//    }
+
+    if(strcmp(token_value, "#t") == 0) {
+        list_iter(list);
+        return true_obj;
+    }
+
+    if(strcmp(token_value, "#f") == 0) {
+        list_iter(list);
+        return false_obj;
+    }
+
+    if(is_str_digit(token_value)) {
+        list_iter(list);
+        return make_fixnum(token_value);
+    }
+}
+
+object* parse_pair(token_list* list) {
+    if(strcmp(list->token_pointer->value, ")") == 0) {
+        list_iter(list);
+        return make_the_empty_list();
+    }
+
+    object * car, * cdr;
+    car = parse(list);
+    cdr = parse_pair(list);
+    return cons(car, cdr);
+}
+
+bool is_str_digit(char* str) {
+    for(int i = 0; i < strlen(str); i++)
+        if(!isdigit(str[i]))
+            return false;
+    return true;
+}
+
+void list_iter(token_list* list) {
+    list->token_pointer = list->token_pointer->next;
 }
