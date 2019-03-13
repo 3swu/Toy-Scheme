@@ -6,8 +6,11 @@
 int main() {
     char* buf = buf_pre_handle(read(stdin));
     printf("%s\n", buf);
-    for(token* t = gen_token(buf); t != NULL; t = t->next)
-        printf("%s\n", t->value);
+    token* t = gen_token(buf);
+    for(token* p = t; p != NULL; p = p->next)
+        printf("%s\n", p->value);
 
+    token_list* list = gen_token_list(t);
+    object* obj = parse(list);
     return 0;
 }
