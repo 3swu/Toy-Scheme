@@ -39,5 +39,9 @@ object* parse_pair(token_list* list);
 /***** more *****/
 bool is_str_digit(char* str);
 
+bool is_str_string(char* str);
+
+bool is_str_symbol(char* str);
+
 void  list_iter(token_list* list);
 #endif //SCHEME_READ_H

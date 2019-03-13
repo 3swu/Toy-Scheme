@@ -137,25 +137,28 @@ object* parse(token_list* list) {
         return parse_pair(list);
     }
 
-//    if(strcmp(token_value, ")") == 0) {
-//        list_iter(list);
-//        return the_empty_list;
-//    }
-
     if(strcmp(token_value, "#t") == 0) {
         list_iter(list);
-        return true_obj;
+        return make_boolean(true);
     }
 
     if(strcmp(token_value, "#f") == 0) {
         list_iter(list);
-        return false_obj;
+        return make_boolean(false);
     }
 
     if(is_str_digit(token_value)) {
         list_iter(list);
         return make_fixnum(token_value);
     }
+
+    if(is_str_string(token_value)) {
+        list_iter(list);
+        return make_string(token_value);
+    }
+
+
+
 }
 
 object* parse_pair(token_list* list) {
@@ -172,9 +175,20 @@ object* parse_pair(token_list* list) {
 
 bool is_str_digit(char* str) {
     for(int i = 0; i < strlen(str); i++)
-        if(!isdigit(str[i]))
+        if(!isdigit(str[i]) && i != 0)
             return false;
     return true;
+}
+
+bool is_str_string(char* str) {
+    return str[0] == '"' && str[strlen(str) - 1] == '"' ? true : false;
+}
+
+bool is_str_symbol(char* str) {
+//    char c = str[0];
+//    if(isalpha(c) ||
+//       c == '*' ||
+//       c == '/')
 }
 
 void list_iter(token_list* list) {
