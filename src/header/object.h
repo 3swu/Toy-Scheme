@@ -77,7 +77,11 @@ extern void set_cdr(object* pair, object* cdr);
 /**** object constructor ****/
 extern object* make_the_empty_list();
 
+extern object* make_boolean(bool value);
+
 extern object* make_fixnum(char* str);
+
+extern object* make_string(char* str);
 
 object* true_obj;
 object* false_obj;

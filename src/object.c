@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
 #include "header/object.h"
 #include "header/error.h"
 
@@ -78,10 +79,37 @@ object* make_the_empty_list() {
     return obj;
 }
 
+object* make_boolean(bool value) {
+    object* obj = alloc_object();
+    obj->type = BOOLEAN;
+    if(value == true)
+        obj->data.boolean.value = true;
+    else
+        obj->data.boolean.value = false;
+
+    return obj;
+}
+
 object* make_fixnum(char* str) {
      object* obj = alloc_object();
      obj->type = FIXNUM;
      obj->data.fixnum.value = atol(str);
 
      return obj;
+}
+
+object* make_string(char* str) {
+    char* s = (char*) malloc(strlen(str) * sizeof(char));
+    if(s == NULL)
+        error_handle(stderr, "out of memory", EXIT_FAILURE);
+
+    int i = 0;
+    for(; str[i + 1] != '"'; i++)
+        s[i] = str[i + 1];
+    s[i + 1] = '\0';
+
+    object* obj = alloc_object();
+    obj->type = STRING;
+    obj->data.string.value = s;
+    return obj;
 }
