@@ -90,6 +90,8 @@ extern object* make_symbol(char* str);
 /**** global object constructor ****/
 extern object* make_symbol_table();
 
+extern object* get_the_empty_environment();
+
 object *true_obj;
 object *false_obj;
 object *the_empty_list;

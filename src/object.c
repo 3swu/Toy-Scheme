@@ -144,3 +144,11 @@ object* make_symbol_table() {
 
     return obj;
 }
+
+object* get_the_empty_environment() {
+    if(the_empty_environment == NULL){
+        the_empty_environment = make_the_empty_list();
+        return make_the_empty_list();
+    }
+    return the_empty_environment;
+}
