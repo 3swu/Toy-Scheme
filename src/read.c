@@ -162,7 +162,7 @@ object* parse(token_list* list) {
         return make_boolean(false);
     }
 
-    char error_msg[TOKEN_MAX + 20];
+    char error_msg[TOKEN_MAX + 50];
     sprintf(error_msg, "unexcepted symbol : %s", token_value);
     error_handle(stderr, error_msg, EXIT_FAILURE);
 
