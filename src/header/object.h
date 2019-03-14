@@ -48,6 +48,8 @@ typedef struct object {
 
 extern object* alloc_object();
 
+extern bool is_empty_list    (object* obj);
+
 extern bool is_boolean       (object* obj);
 
 extern bool is_symbol        (object* obj);
@@ -83,9 +85,14 @@ extern object* make_fixnum(char* str);
 
 extern object* make_string(char* str);
 
-object* true_obj;
-object* false_obj;
-object* the_empty_list;
+extern object* make_symbol(char* str);
+
+/**** global object constructor ****/
+extern object* make_symbol_table();
+
+object *true_obj;
+object *false_obj;
+object *the_empty_list;
 object *symbol_table;
 object *quote_symbol;
 object *define_symbol;
