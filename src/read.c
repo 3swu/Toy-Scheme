@@ -137,14 +137,9 @@ object* parse(token_list* list) {
         return parse_pair(list);
     }
 
-    if(strcmp(token_value, "#t") == 0) {
+    if(is_str_symbol(token_value)) {
         list_iter(list);
-        return make_boolean(true);
-    }
-
-    if(strcmp(token_value, "#f") == 0) {
-        list_iter(list);
-        return make_boolean(false);
+        return make_symbol(token_value);
     }
 
     if(is_str_digit(token_value)) {
@@ -157,7 +152,19 @@ object* parse(token_list* list) {
         return make_string(token_value);
     }
 
+    if(strcmp(token_value, "#t") == 0) {
+        list_iter(list);
+        return make_boolean(true);
+    }
 
+    if(strcmp(token_value, "#f") == 0) {
+        list_iter(list);
+        return make_boolean(false);
+    }
+
+    char error_msg[TOKEN_MAX + 20];
+    sprintf(error_msg, "unexcepted symbol : %s", token_value);
+    error_handle(stderr, error_msg, EXIT_FAILURE);
 
 }
 
@@ -185,10 +192,19 @@ bool is_str_string(char* str) {
 }
 
 bool is_str_symbol(char* str) {
-//    char c = str[0];
-//    if(isalpha(c) ||
-//       c == '*' ||
-//       c == '/')
+    char c = str[0];
+    if(isalpha(c) ||
+       c == '*' ||
+       c == '/' ||
+       c == '+' ||
+       c == '-' ||
+       c == '>' ||
+       c == '<' ||
+       c == '=' ||
+       c == '?' ||
+       c == '!')
+        return true;
+    return false;
 }
 
 void list_iter(token_list* list) {
