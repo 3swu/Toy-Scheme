@@ -14,7 +14,7 @@ object* lookup_variable_value(object* var, object* env) {
         object* frame = first_frame(env);
         object* vars = frame_variables(frame);
         object* vals = frame_values(frame);
-        while(is_empty_list(vars)) {
+        while(!is_empty_list(vars)) {
             if(var == car(vars))
                 return car(vals);
 
@@ -34,8 +34,46 @@ object* extend_environment(object* variables,
     return cons(make_frame(variables, values), base_env);
 }
 
-object* set_variable_value(object* var, object* value, object* env) {
+void set_variable_value(object* var, object* value, object* env) {
+    while(!is_empty_list(env)) {
+        object* frame = first_frame(env);
+        object* vars = frame_variables(frame);
+        object* vals = frame_values(frame);
 
+        while(!is_empty_list(frame)) {
+            if(var == car(vars)){
+                set_car(vals, value);
+                return;
+            }
+            vars = cdr(vars);
+            vals = cdr(vals);
+        }
+        env = enclosing_environment(env);
+    }
+
+    char error_msg[TOKEN_MAX + 50];
+    sprintf(error_msg, "undefined variable: %s\n", var->data.symbol.value);
+    error_handle(stderr, error_msg, EXIT_FAILURE);
+}
+
+void define_variable(object* var, object* val, object* env) {
+    if(!is_empty_list(env)) {
+        object* frame = first_frame(env);
+        object* vars = frame_variables(frame);
+        object* vals = frame_values(frame);
+
+        while(!is_empty_list(vars)) {
+            if(var == car(vars)) {
+                set_car(vals, val);
+                return;
+            }
+            vars = cdr(vars);
+            vals = cdr(vals);
+        }
+
+        /* undefined in first frame, add binding */
+        add_binding_to_frame(var, val, frame);
+    }
 }
 
 object* enclosing_environment(object* env) {

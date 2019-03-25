@@ -11,7 +11,9 @@ extern object* lookup_variable_value(object* var, object* env);
 
 extern object* extend_environment(object* variables, object* values, object* base_env);
 
-extern object* set_variable_value(object* var, object* value, object* env);
+extern void    set_variable_value(object* var, object* value, object* env);
+
+extern void    define_variable(object* var, object* val, object* env);
 
 extern object* enclosing_environment(object* env);
 
