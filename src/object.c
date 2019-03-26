@@ -52,6 +52,16 @@ bool is_compound_proc(object* obj) {
     return obj->type == COMPOUND_PROC ? true : false;
 }
 
+bool is_true(object* obj) {
+    return obj->type == BOOLEAN &&
+           obj->data.boolean.value == true ? true : false;
+}
+
+bool is_false(object* obj) {
+    return obj->type == BOOLEAN &&
+           obj->data.boolean.value == false ? true : false;
+}
+
 object* car(object* pair) {
     return pair->data.pair.car;
 }
@@ -77,11 +87,11 @@ void set_cdr(object* pair, object* cdr) {
     pair->data.pair.cdr = cdr;
 }
 
-object* make_the_empty_list() {
-    object* obj = alloc_object();
-    obj->type = THE_EMPTY_LIST;
-    return obj;
-}
+//object* make_the_empty_list() {
+//    object* obj = alloc_object();
+//    obj->type = THE_EMPTY_LIST;
+//    return obj;
+//}
 
 object* make_boolean(bool value) {
     object* obj = alloc_object();
@@ -120,8 +130,8 @@ object* make_string(char* str) {
 
 object* make_symbol(char* str) {
     /* init symbol table if it is not exist */
-    if(symbol_table == NULL)
-        symbol_table = make_symbol_table();
+//    if(symbol_table == NULL)
+//        symbol_table = make_symbol_table();
 
     /* if symbol table contain the symbol */
     for(object* obj = symbol_table;
@@ -138,17 +148,17 @@ object* make_symbol(char* str) {
     return obj;
 }
 
-object* make_symbol_table() {
-    object* obj = alloc_object();
-    obj->type = THE_EMPTY_LIST;
+//object* make_symbol_table() {
+//    object* obj = alloc_object();
+//    obj->type = THE_EMPTY_LIST;
+//
+//    return obj;
+//}
 
-    return obj;
-}
-
-object* get_the_empty_environment() {
-    if(the_empty_environment == NULL){
-        the_empty_environment = make_the_empty_list();
-        return make_the_empty_list();
-    }
-    return the_empty_environment;
-}
+//object* get_the_empty_environment() {
+//    if(the_empty_environment == NULL){
+//        the_empty_environment = make_the_empty_list();
+//        return make_the_empty_list();
+//    }
+//    return the_empty_environment;
+//}

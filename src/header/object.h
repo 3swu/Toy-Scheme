@@ -66,6 +66,10 @@ extern bool is_primitive_proc(object* obj);
 
 extern bool is_compound_proc (object* obj);
 
+extern bool is_true          (object* obj);
+
+extern bool is_false         (object* obj);
+
 extern object* car(object* pair);
 
 extern object* cdr(object* pair);
