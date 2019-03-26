@@ -39,7 +39,7 @@ void init_built_in() {
 
 }
 
-object* make_procedure(object* parameters, object* body, object* env) {
+object* make_compound_procedure(object* parameters, object* body, object* env) {
     object* obj = alloc_object();
 
     obj->type = COMPOUND_PROC;
