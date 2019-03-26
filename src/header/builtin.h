@@ -39,4 +39,6 @@
 
 extern void init_built_in();
 
+extern object* make_procedure(object* parameters, object* body, object* env);
+
 #endif //SCHEME_BUILTIN_H

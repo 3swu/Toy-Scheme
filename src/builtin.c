@@ -38,3 +38,13 @@ void init_built_in() {
 // and binding the builtin procedure to env
 
 }
+
+object* make_procedure(object* parameters, object* body, object* env) {
+    object* obj = alloc_object();
+
+    obj->type = COMPOUND_PROC;
+    obj->data.compound_proc.parameters = parameters;
+    obj->data.compound_proc.body       = body;
+    obj->data.compound_proc.env        = env;
+    return env;
+}
