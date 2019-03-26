@@ -52,8 +52,6 @@ extern void    eval_sequence(object* exp, object* env);
 
 extern object* begin_actions(object* exp);
 
-extern object* cond_to_if(object* exp);
-
 extern object* operator(object* exp);
 
 extern object* operands(object* exp);
@@ -81,5 +79,17 @@ extern object* if_predicate(object* exp);
 extern object* if_consequent(object* exp);
 
 extern object* if_alternative(object* exp);
+
+extern object* cond_clauses(object* exp);
+
+extern bool    is_cond_else_clause(object* clause);
+
+extern object* cond_predicate(object* clause);
+
+extern object* cond_actions(object* clause);
+
+extern object* cond_to_if(object* exp);
+
+extern object* expand_clause(object* clauses);
 
 #endif //SCHEME_EVAL_H

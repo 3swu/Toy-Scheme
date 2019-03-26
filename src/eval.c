@@ -126,32 +126,37 @@ object* eval_definition(object* exp, object* env) {
 }
 
 void eval_if(object* exp, object* env) {
-
+    if(is_true(eval(if_predicate(exp), env)))
+        eval(if_consequent(exp), env);
+    else
+        eval(if_alternative(exp), env);
 }
 
 object* make_procedure(object* parameters, object* body, object* env) {
-
+    return make_compound_procedure(parameters, body, env);
 }
 
 object* lambda_parameters(object* exp) {
-
+    return cadr(exp);
 }
 
 object* lambda_body(object* exp) {
-
+    return cddr(exp);
 }
 
 void eval_sequence(object* exp, object* env) {
-
+    if(is_last_exp(exp))
+        eval(first_exp(exp), env);
+    else{
+        eval(first_exp(exp), env);
+        eval_sequence(rest_exp(exp), env);
+    }
 }
 
 object* begin_actions(object* exp) {
-
+    return cdr(exp);
 }
 
-object* cond_to_if(object* exp) {
-
-}
 
 object* operator(object* exp) {
 
@@ -216,4 +221,28 @@ object* if_alternative(object* exp) {
         return false_obj;
     else
         return cadddr(exp);
+}
+
+object* cond_clauses(object* exp) {
+    return cdr(exp);
+}
+
+bool    is_cond_else_clause(object* clause) {
+    return cond_predicate(clause) == else_symbol ? true : false;
+}
+
+object* cond_predicate(object* clause) {
+    return car(clause);
+}
+
+object* cond_actions(object* clause) {
+    return cdr(clause);
+}
+
+object* cond_to_if(object* exp) {
+    return expand_clause(cond_clauses(exp));
+}
+
+object* expand_clause(object* clauses) {
+
 }
