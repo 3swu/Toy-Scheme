@@ -171,7 +171,7 @@ object* parse(token_list* list) {
 object* parse_pair(token_list* list) {
     if(strcmp(list->token_pointer->value, ")") == 0) {
         list_iter(list);
-        return make_the_empty_list();
+        return the_empty_list;
     }
 
     object * car, * cdr;
