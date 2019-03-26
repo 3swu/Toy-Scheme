@@ -60,5 +60,26 @@ extern object* operands(object* exp);
 
 extern object* list_of_values(object* exps, object* env);
 
+extern bool    is_last_exp(object* seq);
+
+extern object* first_exp(object* seq);
+
+extern object* rest_exp(object* seq);
+
+extern object* assignment_varialbe(object* exp);
+
+extern object* assignment_value(object* exp);
+
+extern object* definition_variable(object* exp);
+
+extern object* definition_value(object* exp);
+
+extern object* make_lambda(object* parameters, object* body);
+
+extern object* if_predicate(object* exp);
+
+extern object* if_consequent(object* exp);
+
+extern object* if_alternative(object* exp);
 
 #endif //SCHEME_EVAL_H

@@ -9,6 +9,7 @@
 #include "header/apply.h"
 #include "header/error.h"
 #include "header/read.h"
+#include "header/builtin.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -107,15 +108,21 @@ bool is_tagged_list(object* exp, object* tag) {
 }
 
 object* text_of_quotation(object* exp) {
-
+    return cadr(exp);
 }
 
 object* eval_assignment(object* exp, object* env) {
-
+    set_variable_value(assignment_varialbe(exp),
+                       assignment_value(exp),
+                       env);
+    return ok_symbol;
 }
 
 object* eval_definition(object* exp, object* env) {
-
+    define_variable(definition_variable(exp),
+                    eval(definition_value(exp), env),
+                    env);
+    return ok_symbol;
 }
 
 void eval_if(object* exp, object* env) {
@@ -156,4 +163,57 @@ object* operands(object* exp) {
 
 object* list_of_values(object* exps, object* env) {
 
+}
+
+bool is_last_exp(object* seq) {
+    return is_empty_list(cdr(seq));
+}
+
+object* first_exp(object* seq) {
+    return car(seq);
+}
+
+object* rest_exp(object* seq) {
+    return cdr(seq);
+}
+
+object* assignment_varialbe(object* exp) {
+    return cadr(exp);
+}
+
+object* assignment_value(object* exp) {
+    return caddr(exp);
+}
+
+object* definition_variable(object* exp) {
+    if(is_symbol(cadr(exp)))
+        return cadr(exp);
+    else
+        return caadr(exp);
+}
+
+object* definition_value(object* exp) {
+    if(is_symbol(cadr(exp)))
+        return caddr(exp);
+    else
+        return make_lambda(cdadr(exp), cddr(exp));
+}
+
+object* make_lambda(object* parameters, object* body) {
+    return cons(lambda_symbol, cons(parameters, body));
+}
+
+object* if_predicate(object* exp) {
+    return cadr(exp);
+}
+
+object* if_consequent(object* exp) {
+    return caddr(exp);
+}
+
+object* if_alternative(object* exp) {
+    if(is_empty_list(cdddr(exp)))
+        return false_obj;
+    else
+        return cadddr(exp);
 }
