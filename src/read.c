@@ -87,7 +87,7 @@ token* gen_token(char* buf) {
             error_handle(stderr, "out of memory while parse token", EXIT_FAILURE);
         t->next = NULL;
 
-        int len = strlen(buf);
+//        int len = strlen(buf);
         for(; buf[i] == ' ' || buf[i] == '\n'; i++)
             if(i >= strlen(buf) - 1 )
                 return token_list;
