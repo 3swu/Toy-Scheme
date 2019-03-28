@@ -92,4 +92,15 @@ extern object* cond_to_if(object* exp);
 
 extern object* expand_clause(object* clauses);
 
+extern object* sequence_to_exp(object* seq);
+
+extern object* make_if(object* predicate, object* consequent, object* alternative);
+
+extern object* make_begin(object* seq);
+
+extern bool    is_no_operands(object* ops);
+
+extern object* first_operand(object* ops);
+
+extern object* rest_operands(object* ops);
 #endif //SCHEME_EVAL_H

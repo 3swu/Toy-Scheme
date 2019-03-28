@@ -159,15 +159,18 @@ object* begin_actions(object* exp) {
 
 
 object* operator(object* exp) {
-
+    return car(exp);
 }
 
 object* operands(object* exp) {
-
+    return cdr(exp);
 }
 
 object* list_of_values(object* exps, object* env) {
-
+    if(is_no_operands(exps))
+        return the_empty_list;
+    return cons(eval(first_operand(exps), env),
+            list_of_values(rest_operands(exps), env));
 }
 
 bool is_last_exp(object* seq) {
@@ -244,5 +247,59 @@ object* cond_to_if(object* exp) {
 }
 
 object* expand_clause(object* clauses) {
+    object* first;
+    object* rest;
+    if(is_empty_list(clauses))
+        return false_obj;
+    else {
+        first = car(clauses);
+        rest = cddr(clauses);
 
+        if(is_cond_else_clause(first)) {
+            if(is_empty_list(rest))
+                return sequence_to_exp(cond_actions(first));
+            else
+                error_handle_with_object(stderr,
+                        "ELSE clause isn't last --COND->IF",
+                        EXIT_FAILURE,
+                        clauses);
+        }
+        else {
+            return make_if(cond_predicate(first),
+                           sequence_to_exp(cond_actions(first)),
+                           expand_clause(rest));
+        }
+    }
+}
+
+object* sequence_to_exp(object* seq) {
+    if(is_empty_list(seq))
+        return seq;
+    else if(is_last_exp(seq))
+        return first_exp(seq);
+    else
+        return make_begin(seq);
+}
+
+object* make_if(object* predicate, object* consequent, object* alternative) {
+    return cons(if_symbol,
+            cons(predicate,
+                    cons(consequent,
+                            cons(alternative, the_empty_list))));
+}
+
+object* make_begin(object* seq) {
+    return cons(begin_symbol, seq);
+}
+
+bool    is_no_operands(object* ops) {
+    return is_empty_list(ops);
+}
+
+object* first_operand(object* ops) {
+    return car(ops);
+}
+
+object* rest_operands(object* ops) {
+    return cdr(ops);
 }
