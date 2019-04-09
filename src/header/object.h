@@ -85,7 +85,7 @@ extern object* make_the_empty_list();
 
 extern object* make_boolean(bool value);
 
-extern object* make_fixnum(char* str);
+extern object* make_fixnum(long value);
 
 extern object* make_string(char* str);
 

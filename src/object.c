@@ -104,10 +104,10 @@ object* make_boolean(bool value) {
     return obj;
 }
 
-object* make_fixnum(char* str) {
+object* make_fixnum(long value) {
      object* obj = alloc_object();
      obj->type = FIXNUM;
-     obj->data.fixnum.value = atol(str);
+     obj->data.fixnum.value = value;
 
      return obj;
 }
