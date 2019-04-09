@@ -4,8 +4,11 @@
 // built in procedures and objects
 
 #include <memory.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "header/builtin.h"
 #include "header/object.h"
+#include "header/environment.h"
 
 void init_built_in() {
     true_obj = alloc_object(); /* init true_obj */
@@ -34,10 +37,20 @@ void init_built_in() {
     or_symbol     = make_symbol("or"    );
 
     the_empty_environment = the_empty_list;
-//TODO
-// make the global environment, include init the env
-// and binding the builtin procedure to env
+    the_global_environment = make_environment();
 
+}
+
+object* make_environment() {
+    object* env;
+    env = setup_environment();
+    add_primitive_to_environment(env);
+    return env;
+}
+
+object* setup_environment() {
+    object* env = extend_environment(the_empty_list, the_empty_list, the_empty_environment);
+    return env;
 }
 
 object* make_compound_procedure(object* parameters, object* body, object* env) {
@@ -48,6 +61,13 @@ object* make_compound_procedure(object* parameters, object* body, object* env) {
     obj->data.compound_proc.body       = body;
     obj->data.compound_proc.env        = env;
     return env;
+}
+
+object* make_primitive_procedure(object* (* fun)(object* )) {
+    object* obj = alloc_object();
+    obj->type = PRIMITIVE_PROC;
+    obj->data.primitive_proc.fun = fun;
+    return obj;
 }
 
 /* implement of built-in procedures */
@@ -172,3 +192,86 @@ static object* is_equal_procedure(object* arguments) {
     }
 }
 
+static object* is_null_procedure(object* arguments) {
+    return is_empty_list(car(arguments)) ? true_obj : false_obj;
+}
+
+static object* is_bool_procedure(object* arguments) {
+    return is_boolean(car(arguments)) ? true_obj : false_obj;
+}
+
+static object* is_symbol_procedure(object* arguments) {
+    return is_symbol(car(arguments)) ? true_obj : false_obj;
+}
+
+static object* is_integer_procedure(object* arguments) {
+    return is_fixnum(car(arguments)) ? true_obj : false_obj;
+}
+
+static object* is_string_procedure(object* arguments) {
+    return is_string(car(arguments)) ? true_obj : false_obj;
+}
+
+static object* is_pair_procedure(object* arguments) {
+    return is_pair(car(arguments)) ? true_obj : false_obj;
+}
+
+static object* is_procedure_procedure(object* arguments) {
+    object* obj = car(arguments);
+    return is_primitive_proc(obj) || is_compound_proc(obj) ? true_obj : false_obj;
+}
+
+static object* number_to_string_procedure(object* arguments) {
+    char buffer[100];
+
+    sprintf(buffer, "%ld", car(arguments)->data.fixnum.value);
+    return make_string(buffer);
+}
+
+static object* string_to_number_procedure(object* arguments) {
+    return make_fixnum(atoi(car(arguments)->data.string.value));
+}
+
+static object* symbol_to_string_procedure(object* arguments) {
+    return make_string(car(arguments)->data.symbol.value);
+}
+
+static object* string_to_symbol_procedure(object* arguments) {
+    return make_symbol(car(arguments)->data.string.value);
+}
+
+
+void add_primitive_to_environment(object* env) {
+#define ADD_PRIMITIVE_PROCEDURE(scheme_name, c_name) \
+    define_variable(make_symbol(scheme_name), make_primitive_procedure(c_name), env);
+
+    ADD_PRIMITIVE_PROCEDURE("+",                           add_procedure)
+    ADD_PRIMITIVE_PROCEDURE("-",                           sub_procedure)
+    ADD_PRIMITIVE_PROCEDURE("*",                           mul_procedure)
+    ADD_PRIMITIVE_PROCEDURE("/",                           div_procedure)
+    ADD_PRIMITIVE_PROCEDURE("quotient",                    div_procedure)
+    ADD_PRIMITIVE_PROCEDURE("remainder",             remainder_procedure)
+    ADD_PRIMITIVE_PROCEDURE("=",                  is_num_equal_procedure)
+    ADD_PRIMITIVE_PROCEDURE("<",                       is_less_procedure)
+    ADD_PRIMITIVE_PROCEDURE(">",                    is_greater_procedure)
+    ADD_PRIMITIVE_PROCEDURE("cons",                       cons_procedure)
+    ADD_PRIMITIVE_PROCEDURE("car",                         car_procedure)
+    ADD_PRIMITIVE_PROCEDURE("cdr",                         cdr_procedure)
+    ADD_PRIMITIVE_PROCEDURE("set-car!",                set_car_procedure)
+    ADD_PRIMITIVE_PROCEDURE("set-cdr!",                set_cdr_procedure)
+    ADD_PRIMITIVE_PROCEDURE("list",                       list_procedure)
+    ADD_PRIMITIVE_PROCEDURE("eq?",                    is_equal_procedure)
+    ADD_PRIMITIVE_PROCEDURE("null?",                   is_null_procedure)
+    ADD_PRIMITIVE_PROCEDURE("boolean?",                is_bool_procedure)
+    ADD_PRIMITIVE_PROCEDURE("symbol?",               is_symbol_procedure)
+    ADD_PRIMITIVE_PROCEDURE("integer?",             is_integer_procedure)
+    ADD_PRIMITIVE_PROCEDURE("string?",               is_string_procedure)
+    ADD_PRIMITIVE_PROCEDURE("pair?",                   is_pair_procedure)
+    ADD_PRIMITIVE_PROCEDURE("procedure?",         is_procedure_procedure)
+    ADD_PRIMITIVE_PROCEDURE("number->string", number_to_string_procedure)
+    ADD_PRIMITIVE_PROCEDURE("string->number", string_to_number_procedure)
+    ADD_PRIMITIVE_PROCEDURE("symbol->string", symbol_to_string_procedure)
+    ADD_PRIMITIVE_PROCEDURE("string->symbol", string_to_symbol_procedure)
+
+
+}

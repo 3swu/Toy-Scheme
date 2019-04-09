@@ -37,8 +37,18 @@
 #define cdddar(obj) cdr(cdr(cdr(car(obj))))
 #define cddddr(obj) cdr(cdr(cdr(cdr(obj))))
 
+
+
 extern void init_built_in();
 
 extern object* make_compound_procedure(object* parameters, object* body, object* env);
+
+extern object* make_primitive_procedure(object* (* fun)(object* ));
+
+extern object* make_environment();
+
+extern object* setup_environment();
+
+extern void    add_primitive_to_environment(object* env);
 
 #endif //SCHEME_BUILTIN_H
