@@ -3,6 +3,7 @@
 //
 // built in procedures and objects
 
+#include <memory.h>
 #include "header/builtin.h"
 #include "header/object.h"
 
@@ -48,3 +49,126 @@ object* make_compound_procedure(object* parameters, object* body, object* env) {
     obj->data.compound_proc.env        = env;
     return env;
 }
+
+/* implement of built-in procedures */
+static object* add_procedure(object* arguments) {
+    long result = 0;
+    while(!is_empty_list(arguments)) {
+        result += (car(arguments)->data.fixnum.value);
+        arguments = cdr(arguments);
+    }
+    return make_fixnum(result);
+}
+
+static object* sub_procedure(object* arguments) {
+    long result = car(arguments)->data.fixnum.value;
+    arguments = cdr(arguments);
+
+    while(!is_empty_list(arguments)) {
+        result -= car(arguments)->data.fixnum.value;
+        arguments = cdr(arguments);
+    }
+    return make_fixnum(result);
+}
+
+static object* mul_procedure(object* arguments) {
+    long result = 1;
+
+    while(!is_empty_list(arguments)) {
+        result *= car(arguments)->data.fixnum.value;
+        arguments = cdr(arguments);
+    }
+
+    return make_fixnum(result);
+}
+
+static object* div_procedure(object* arguments) {
+    return make_fixnum(car(arguments)->data.fixnum.value /
+                        cadr(arguments)->data.fixnum.value);
+}
+
+static object* remainder_procedure(object* arguments) {
+    return make_fixnum(car(arguments)->data.fixnum.value %
+                        cadr(arguments)->data.fixnum.value);
+}
+
+static object* is_num_equal_procedure(object* arguments) {
+    long value = car(arguments)->data.fixnum.value;
+
+    while(!is_empty_list(arguments = cdr(arguments))) {
+        if(value != car(arguments)->data.fixnum.value)
+            return false_obj;
+    }
+    return true_obj;
+}
+
+static object* is_less_procedure(object* arguments) {
+    long previous = car(arguments)->data.fixnum.value;
+    long next;
+
+    while(!is_empty_list(arguments = cdr(arguments))) {
+        next = car(arguments)->data.fixnum.value;
+        if(previous > next)
+            return false_obj;
+    }
+    return true_obj;
+}
+
+static object* is_greater_procedure(object* arguments) {
+    long previous = car(arguments)->data.fixnum.value;
+    long next;
+
+    while(!is_empty_list(arguments = cdr(arguments))) {
+        next = car(arguments)->data.fixnum.value;
+        if(previous < next)
+            return false_obj;
+    }
+    return true_obj;
+}
+
+static object* cons_procedure(object* arguments) {
+    return cons(car(arguments), cadr(arguments));
+}
+
+static object* car_procedure(object* arguments) {
+    return caar(arguments);
+}
+
+static object* cdr_procedure(object* arguments) {
+    return cdar(arguments);
+}
+
+static object* set_car_procedure(object* arguments) {
+    set_car(car(arguments), cadr(arguments));
+    return ok_symbol;
+}
+
+static object* set_cdr_procedure(object* arguments) {
+    set_cdr(car(arguments), cadr(arguments));
+    return ok_symbol;
+}
+
+static object* list_procedure(object* arguments) {
+    return arguments;
+}
+
+static object* is_equal_procedure(object* arguments) {
+    object* first = car(arguments);
+    object* second = cadr(arguments);
+
+    if(first->type != second->type)
+        return false_obj;
+
+    switch(first->type) {
+        case FIXNUM:
+            return first->data.fixnum.value == second->data.fixnum.value ?
+                    true_obj : false_obj;
+
+        case STRING:
+            return strcmp(first->data.string.value, second->data.string.value) == 0 ?
+                    true_obj : false_obj;
+        default:
+            return first == second ? true_obj : false_obj;
+    }
+}
+
