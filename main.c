@@ -3,6 +3,7 @@
 
 #include "src/header/read.h"
 #include "src/header/builtin.h"
+#include "src/header/eval.h"
 
 int main() {
     char* buf = buf_pre_handle(read(stdin));
@@ -15,5 +16,7 @@ int main() {
 
     token_list* list = gen_token_list(t);
     object* obj = parse(list);
+    init_built_in();
+    eval(obj, the_global_environment);
     return 0;
 }
