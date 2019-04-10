@@ -144,7 +144,7 @@ object* parse(token_list* list) {
 
     if(is_str_digit(token_value)) {
         list_iter(list);
-        return make_fixnum(token_value);
+        return make_fixnum(atol(token_value));
     }
 
     if(is_str_string(token_value)) {
@@ -209,4 +209,17 @@ bool is_str_symbol(char* str) {
 
 void list_iter(token_list* list) {
     list->token_pointer = list->token_pointer->next;
+}
+
+object* reader(FILE* in) {
+    char* buf = buf_pre_handle(read(stdin));
+    token* t = gen_token(buf);
+
+//    for(token* p = t; p != NULL; p = p->next)
+//        printf("%s\n", p->value);
+
+    token_list* list = gen_token_list(t);
+    object* obj = parse(list);
+
+    return obj;
 }

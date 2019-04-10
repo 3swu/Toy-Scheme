@@ -44,4 +44,8 @@ bool is_str_string(char* str);
 bool is_str_symbol(char* str);
 
 void  list_iter(token_list* list);
+
+/****** read interface ******/
+
+extern object* reader(FILE* in);
 #endif //SCHEME_READ_H
