@@ -60,7 +60,7 @@ object* make_compound_procedure(object* parameters, object* body, object* env) {
     obj->data.compound_proc.parameters = parameters;
     obj->data.compound_proc.body       = body;
     obj->data.compound_proc.env        = env;
-    return env;
+    return obj;
 }
 
 object* make_primitive_procedure(object* (* fun)(object* )) {
