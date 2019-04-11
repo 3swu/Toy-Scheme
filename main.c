@@ -24,7 +24,7 @@ int main() {
 //    object* obj = parse(list);
     object* obj;
     init_built_in();
-    printf("Welcome to Scheme 0.1.0\n");
+    printf("Welcome to Toy-Scheme\n");
     printf("Press Ctrl-C to exit\n");
     for(; ;) {
         printf("> ");
