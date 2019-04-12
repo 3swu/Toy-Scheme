@@ -62,6 +62,8 @@ object* eval(object* exp, object* env) {
 
             exp = rest_exp(exp);
         }
+        exp =first_exp(exp);
+        return eval(exp, env);
     }
     else if(is_or(exp)) {
         exp = or_tests(exp);
@@ -74,6 +76,8 @@ object* eval(object* exp, object* env) {
 
             exp = rest_exp(exp);
         }
+        exp = first_exp(exp);
+        return eval(exp, env);
     }
     else if(is_application(exp)) {
         apply(eval(operator(exp), env),
