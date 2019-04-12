@@ -84,24 +84,18 @@ token* gen_token(char* buf) {
     token_p = token_list;
 
     int i = 0, j = 0;
-    while(1) {
+    while(i < strlen(buf)) {
         token* t = (token*) malloc(sizeof(token));
         t->value = (char*) malloc(TOKEN_MAX * sizeof(char));
         if(t == NULL || t->value == NULL)
             error_handle(stderr, "out of memory while parse token", EXIT_FAILURE);
         t->next = NULL;
 
-//        int len = strlen(buf);
         for(; buf[i] == ' ' || buf[i] == '\n'; i++)
             if(i >= strlen(buf) - 1 )
                 return token_list;
 
-        for(j = i; buf[j] != ' '; j++)
-            if(buf[j] == '\0') {
-                t->value = ")";
-                token_p->next = t;
-                return token_list;
-            }
+        for(j = i; buf[j] != ' ' && buf[j] != '\0'; j++);
 
         if(j - i >= TOKEN_MAX) {
             t->value = (char*) realloc(t->value, TOKEN_MAX * 10 * sizeof(char));
@@ -119,6 +113,7 @@ token* gen_token(char* buf) {
         token_p->next = t;
         token_p = t;
     }
+    return token_list;
 
 }
 
@@ -229,7 +224,7 @@ object* parse_string(char* str) {
 }
 
 object* reader(FILE* in) {
-    char* buf = buf_pre_handle(read(stdin));
+    char* buf = buf_pre_handle(read(in));
     token* t = gen_token(buf);
 
 //    for(token* p = t; p != NULL; p = p->next)
