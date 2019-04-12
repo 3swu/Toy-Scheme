@@ -37,7 +37,7 @@ void write(FILE* out, object* obj) {
             fprintf(out, "#<compound-procedure>");
             break;
         default:
-            fprintf(stderr, "known write type");
+            fprintf(stderr, "unknown write type");
     }
 }
 
@@ -53,7 +53,7 @@ void write(FILE* out, object* obj) {
     else if(obj_cdr->type == THE_EMPTY_LIST)
         return;
     else {
-        fprintf(out, " . ");
+        fprintf(out, " ");
         write(out, obj_cdr);
     }
 
