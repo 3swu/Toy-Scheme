@@ -28,6 +28,12 @@ extern bool is_begin          (object* exp);
 
 extern bool is_cond           (object* exp);
 
+extern bool is_let            (object* exp);
+
+extern bool is_and            (object* exp);
+
+extern bool is_or             (object* exp);
+
 extern bool is_application    (object* exp);
 
 extern bool is_tagged_list    (object* exp, object* tag);
@@ -103,4 +109,29 @@ extern bool    is_no_operands(object* ops);
 extern object* first_operand(object* ops);
 
 extern object* rest_operands(object* ops);
+
+extern object* let_to_application(object* exp);
+
+extern object* let_parameters(object* exp);
+
+extern object* let_body(object* exp);
+
+extern object* let_arguments(object* exp);
+
+extern object* make_application(object* operator, object* operands);
+
+extern object* binding_parameters(object* bindings);
+
+extern object* binding_arguments(object* bindings);
+
+extern object* binding_parameter(object* binding);
+
+extern object* binding_argument(object* binding);
+
+extern object* let_bindings(object* exp);
+
+extern object* and_tests(object* exp);
+
+extern object* or_tests(object* exp);
+
 #endif //SCHEME_EVAL_H

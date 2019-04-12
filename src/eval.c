@@ -17,6 +17,7 @@
 object* eval(object* exp, object* env) {
 
     /* deal with this cases */
+    object* result;
 
     if(is_self_evaluating(exp)) {
         return exp;
@@ -46,6 +47,33 @@ object* eval(object* exp, object* env) {
     }
     else if(is_cond(exp)) {
         eval(cond_to_if(exp), env);
+    }
+    else if(is_let(exp)) {
+        eval(let_to_application(exp), env);
+    }
+    else if(is_and(exp)) {
+        exp = and_tests(exp);
+        if(is_empty_list(exp))
+            return true_obj;
+        while(!is_last_exp(exp)) {
+            result = eval(first_exp(exp), env);
+            if(is_false(result))
+                return false_obj;
+
+            exp = rest_exp(exp);
+        }
+    }
+    else if(is_or(exp)) {
+        exp = or_tests(exp);
+        if(is_empty_list(exp))
+            return false_obj;
+        while(!is_last_exp(exp)) {
+            result = eval(first_exp(exp), env);
+            if(is_true(result))
+                return true_obj;
+
+            exp = rest_exp(exp);
+        }
     }
     else if(is_application(exp)) {
         apply(eval(operator(exp), env),
@@ -93,6 +121,18 @@ bool is_begin          (object* exp) {
 
 bool is_cond           (object* exp) {
     return is_tagged_list(exp, cond_symbol);
+}
+
+bool is_let            (object* exp) {
+    return is_tagged_list(exp, let_symbol);
+}
+
+bool is_and            (object* exp) {
+    return is_tagged_list(exp, and_symbol);
+}
+
+bool is_or             (object* exp) {
+    return is_tagged_list(exp, or_symbol);
 }
 
 bool is_application    (object* exp) {
@@ -302,4 +342,57 @@ object* first_operand(object* ops) {
 
 object* rest_operands(object* ops) {
     return cdr(ops);
+}
+
+object* let_to_application(object* exp) {
+    return make_application(make_lambda(let_parameters(exp), let_body(exp)), let_arguments(exp));
+}
+
+object* let_parameters(object* exp) {
+    return binding_parameters(let_bindings(exp));
+}
+
+object* let_body(object* exp) {
+    return cddr(exp);
+}
+
+object* let_arguments(object* exp) {
+    return binding_arguments(let_bindings(exp));
+}
+
+object* make_application(object* operator, object* operands) {
+    return cons(operator, operands);
+}
+
+object* binding_parameters(object* bindings) {
+    return is_empty_list(bindings) ?
+        the_empty_list :
+        cons(binding_parameter(car(bindings)), binding_parameters(cdr(bindings)));
+}
+
+object* binding_arguments(object* bindings) {
+    return is_empty_list(bindings) ?
+        the_empty_list :
+        cons(binding_argument(car(bindings)), binding_arguments(cdr(bindings)));
+
+}
+
+object* binding_parameter(object* binding) {
+    return car(binding);
+}
+
+object* binding_argument(object* binding) {
+    return cadr(binding);
+}
+
+object* let_bindings(object* exp) {
+    return cadr(exp);
+}
+
+object* and_tests(object* exp) {
+    return cdr(exp);
+}
+
+object* or_tests(object* exp) {
+    return cdr(exp);
 }
