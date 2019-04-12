@@ -149,7 +149,7 @@ object* parse(token_list* list) {
 
     if(is_str_string(token_value)) {
         list_iter(list);
-        return make_string(token_value);
+        return parse_string(token_value);
     }
 
     if(strcmp(token_value, "#t") == 0) {
@@ -209,6 +209,19 @@ bool is_str_symbol(char* str) {
 
 void list_iter(token_list* list) {
     list->token_pointer = list->token_pointer->next;
+}
+
+object* parse_string(char* str) {
+    char* s = (char*) malloc(strlen(str) * sizeof(char));
+    if(s == NULL)
+        error_handle(stderr, "out of memory", EXIT_FAILURE);
+
+    int i = 0;
+    for(; str[i + 1] != '"'; i++)
+        s[i] = str[i + 1];
+    s[i + 1] = '\0';
+
+    return make_string(s);
 }
 
 object* reader(FILE* in) {

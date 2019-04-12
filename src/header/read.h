@@ -45,6 +45,8 @@ bool is_str_symbol(char* str);
 
 void  list_iter(token_list* list);
 
+object* parse_string(char* str);
+
 /****** read interface ******/
 
 extern object* reader(FILE* in);
