@@ -43,23 +43,27 @@ char* buf_pre_handle(char* pre_buf) { /* add space and remove comments */
 
     int buf_i = 0, pbuf_i = 0;
     while(pre_buf[pbuf_i] != '\0') {
-        if(pre_buf[pbuf_i] == '(') {
-            buf[buf_i++] = ' ';
-            buf[buf_i++] = '(';
-            buf[buf_i++] = ' ';
-            pbuf_i++;
-        }
-        if(pre_buf[pbuf_i] == ')') {
-            buf[buf_i++] = ' ';
-            buf[buf_i++] = ')';
-            buf[buf_i++] = ' ';
-            pbuf_i++;
-        }
-        if(pre_buf[pbuf_i] == ';') {
-            while(pre_buf[pbuf_i] != '\n')
+
+        switch(pre_buf[pbuf_i]) {
+            case '(':
+                buf[buf_i++] = ' ';
+                buf[buf_i++] = '(';
+                buf[buf_i++] = ' ';
                 pbuf_i++;
+                break;
+            case ')':
+                buf[buf_i++] = ' ';
+                buf[buf_i++] = ')';
+                buf[buf_i++] = ' ';
+                pbuf_i++;
+                break;
+            case ';':
+                while(pre_buf[pbuf_i] != '\n')
+                    pbuf_i++;
+                break;
+            default:
+                buf[buf_i++] = pre_buf[pbuf_i++];
         }
-        buf[buf_i++] = pre_buf[pbuf_i++];
 
         if(buf_i > MAXSIZE - 3) {
             buf = (char*) realloc(buf, MAXSIZE * 10 * sizeof(char));
