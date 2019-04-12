@@ -21,7 +21,9 @@ void write(FILE* out, object* obj) {
             fprintf(out, "%ld", obj->data.fixnum.value);
             break;
         case STRING:
+            fprintf(out, "\"");
             fprintf(out, "%s", obj->data.string.value);
+            fprintf(out, "\"");
             break;
         case PAIR:
             fprintf(out, "(");
