@@ -92,7 +92,7 @@ object* eval(object* exp, object* env) {
 }
 
 bool is_self_evaluating(object* exp) {
-    return is_fixnum(exp) || is_string(exp) ? true : false;
+    return is_fixnum(exp) || is_string(exp) || is_boolean(exp) ? true : false;
 }
 
 bool is_variable       (object* exp) {
