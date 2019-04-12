@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cmake .
+make
+sudo cp Toy-Scheme /usr/local/bin/
