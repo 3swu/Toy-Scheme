@@ -61,4 +61,4 @@ sudo ./INSTALL
 
 ### Author
 ---
-see `AUTHORS`
+Wu Lei (<a href="mailto:wuleiatso@gmail.com">wuleiatso@gmail.com</a>)
