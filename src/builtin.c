@@ -240,6 +240,10 @@ static object* string_to_symbol_procedure(object* arguments) {
     return make_symbol(car(arguments)->data.string.value);
 }
 
+static object* environment_procedure(object* arguments) {
+    return the_global_environment;
+}
+
 
 void add_primitive_to_environment(object* env) {
 #define ADD_PRIMITIVE_PROCEDURE(scheme_name, c_name) \
@@ -272,6 +276,6 @@ void add_primitive_to_environment(object* env) {
     ADD_PRIMITIVE_PROCEDURE("string->number", string_to_number_procedure)
     ADD_PRIMITIVE_PROCEDURE("symbol->string", symbol_to_string_procedure)
     ADD_PRIMITIVE_PROCEDURE("string->symbol", string_to_symbol_procedure)
-
+    ADD_PRIMITIVE_PROCEDURE("environment",         environment_procedure)
 
 }
