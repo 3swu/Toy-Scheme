@@ -45,6 +45,7 @@
 + `string->number` 将字符串转换为整数
 + `symbol->string` 将符号转换为字符串
 + `string->symbol` 将字符串转换为符号
++ `environment` 查看全局环境中绑定的变量
 
 ### Build & Install
 ---
