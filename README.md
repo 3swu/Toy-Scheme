@@ -54,6 +54,17 @@
 sudo chmod +x ./INSTALL
 sudo ./INSTALL
 ```
+
+### Usage
+---
+直接进入REPL环境
+```bash
+./Toy-Scheme
+```
+解释指定的源文件，使用命令`./Toy-Scheme -f [file]`
+```bash
+./Toy-Scheme -f hello.scm
+```
 ### Requirement
 ---
 为了编译项目，需要有以下的组件：
