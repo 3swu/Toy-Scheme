@@ -11,7 +11,7 @@
 #include <memory.h>
 #include <ctype.h>
 
-#define MAXSIZE 1024
+#define MAXSIZE 10240
 
 char* read(FILE* in_stream) { /* from in_stream to buffer */
     char *buf, ch;
@@ -21,13 +21,26 @@ char* read(FILE* in_stream) { /* from in_stream to buffer */
     if(buf == NULL)
         error_handle(stderr, "out of memory", EXIT_FAILURE);
 
-    while((ch = getc(in_stream)) != EOF && ch != '\n') {
-        buf[i++] = ch;
+    if(in_stream == stdin) {
+        while((ch = (char)getc(in_stream)) != EOF && ch != '\n') {
+            buf[i++] = ch;
 
-        if(i >= MAXSIZE) {
-            buf = (char*) realloc(buf, MAXSIZE * 10 * sizeof(char));
-            if(buf == NULL)
-                error_handle(stderr, "out of memory", EXIT_FAILURE);
+            if(i >= MAXSIZE) {
+                buf = (char*) realloc(buf, MAXSIZE * 10 * sizeof(char));
+                if(buf == NULL)
+                    error_handle(stderr, "out of memory", EXIT_FAILURE);
+            }
+        }
+    }
+    else {
+        while((ch = (char)getc(in_stream)) != EOF) {
+            buf[i++] = ch;
+
+            if(i >= MAXSIZE) {
+                buf = (char*) realloc(buf, MAXSIZE * 10 * sizeof(char));
+                if(buf == NULL)
+                    error_handle(stderr, "out of memory", EXIT_FAILURE);
+            }
         }
     }
     buf[i] = '\0';
@@ -60,6 +73,11 @@ char* buf_pre_handle(char* pre_buf) { /* add space and remove comments */
             case ';':
                 while(pre_buf[pbuf_i] != '\n')
                     pbuf_i++;
+                break;
+            case '\n':
+                buf[buf_i++] = ' ';
+                buf[buf_i++] = '\n';
+                pbuf_i++;
                 break;
             default:
                 buf[buf_i++] = pre_buf[pbuf_i++];
