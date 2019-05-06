@@ -297,7 +297,7 @@ object* expand_clause(object* clauses) {
         return false_obj;
     else {
         first = car(clauses);
-        rest = cddr(clauses);
+        rest = cdr(clauses);
 
         if(is_cond_else_clause(first)) {
             if(is_empty_list(rest))
