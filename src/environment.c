@@ -24,7 +24,7 @@ object* lookup_variable_value(object* var, object* env) {
         env = enclosing_environment(env);
     }
     char error_msg[TOKEN_MAX + 50];
-    sprintf(error_msg, "undefined variable(test): %s\n", var->data.symbol.value);
+    sprintf(error_msg, "undefined variable: %s\n", var->data.symbol.value);
     error_handle(stderr, error_msg, EXIT_FAILURE);
 }
 
