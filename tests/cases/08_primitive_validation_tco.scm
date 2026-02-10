@@ -1,0 +1,12 @@
+(define keep 1)
+(car 1)
+(+ keep 2)
+(/ 1 0)
+(+ keep 3)
+(define (tail-loop n acc)
+  (if (= n 0)
+      acc
+      (tail-loop (- n 1) (+ acc 1))))
+(tail-loop 30000 0)
+(< 1 1)
+(> 1 1)

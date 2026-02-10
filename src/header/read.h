@@ -3,7 +3,7 @@
 //
 // read source code
 
-#include <bits/types/FILE.h>
+#include <stdio.h>
 #include "object.h"
 
 #ifndef SCHEME_READ_H
@@ -22,13 +22,15 @@ typedef struct {
 } token_list;
 
 /***** read *****/
-char* read(FILE* in_stream);
+char* read_source(FILE* in_stream);
 
 char* buf_pre_handle(char* buf);
 
 token* gen_token(char* buf);
 
 token_list* gen_token_list(token* token_l);
+
+void destroy_token_list(token_list* list);
 
 /***** parse *****/
 extern

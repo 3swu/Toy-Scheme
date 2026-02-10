@@ -3,4 +3,35 @@ project(Scheme C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(Toy-Scheme main.c src/header/object.h src/object.c src/header/error.h src/error.c src/header/read.h src/read.c src/header/eval.h src/eval.c src/header/environment.h src/environment.c src/header/apply.h src/apply.c src/header/builtin.h src/builtin.c src/header/write.h src/write.c)
+set(TOY_SCHEME_SOURCES
+    main.c
+    src/object.c
+    src/error.c
+    src/read.c
+    src/eval.c
+    src/environment.c
+    src/apply.c
+    src/builtin.c
+    src/write.c
+)
+
+add_executable(Toy-Scheme ${TOY_SCHEME_SOURCES})
+
+find_path(READLINE_INCLUDE_DIR readline/readline.h)
+find_library(READLINE_LIBRARY NAMES readline edit)
+find_library(TERMCAP_LIBRARY NAMES ncurses curses termcap tinfo)
+
+if(READLINE_INCLUDE_DIR AND READLINE_LIBRARY)
+    target_include_directories(Toy-Scheme PRIVATE ${READLINE_INCLUDE_DIR})
+    target_link_libraries(Toy-Scheme PRIVATE ${READLINE_LIBRARY})
+    if(TERMCAP_LIBRARY)
+        target_link_libraries(Toy-Scheme PRIVATE ${TERMCAP_LIBRARY})
+    endif()
+    target_compile_definitions(Toy-Scheme PRIVATE HAVE_READLINE=1)
+    message(STATUS "REPL line editing enabled with ${READLINE_LIBRARY}")
+else()
+    message(STATUS "readline/libedit not found; REPL falls back to raw input")
+endif()
+
+install(TARGETS Toy-Scheme
+        RUNTIME DESTINATION bin)

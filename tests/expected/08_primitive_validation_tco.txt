@@ -1,0 +1,7 @@
+car: arg 1 must be pair
+3
+/: division by zero
+4
+30000
+#f
+#f

@@ -1,5 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-cmake .
-make
-sudo cp Toy-Scheme /usr/local/bin/
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "${SCRIPT_DIR}/scripts/install.sh" "$@"

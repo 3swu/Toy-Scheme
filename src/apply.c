@@ -20,7 +20,7 @@ object* apply(object* procedure, object* arguments) {
         object* environ = extend_environment(procedure->data.compound_proc.parameters,
                                              arguments,
                                              procedure->data.compound_proc.env);
-        eval_sequence(procedure->data.compound_proc.body, environ);
+        return eval_sequence(procedure->data.compound_proc.body, environ);
     }
     else {
         error_handle_with_object(stderr,
@@ -28,6 +28,7 @@ object* apply(object* procedure, object* arguments) {
                 EXIT_FAILURE,
                 procedure);
     }
+    return NULL;
 }
 
 object* procedure_parameters(object* procedure) {

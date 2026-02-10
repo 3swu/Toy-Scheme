@@ -1,6 +1,9 @@
 #include <stdio.h>
-#include <memory.h>
+#include <string.h>
 #include <stdlib.h>
+#include <setjmp.h>
+
+extern int isatty(int fd);
 
 #include "src/header/read.h"
 #include "src/header/builtin.h"
@@ -11,12 +14,32 @@
 
 void print_prompt() {
     printf("Welcome to Toy-Scheme\nPress Ctrl-C to exit\n");
+    fflush(stdout);
+}
+
+static bool has_scm_suffix(const char* path) {
+    size_t filename_len = strlen(path);
+    return filename_len >= 4 && strcmp(path + filename_len - 4, ".scm") == 0;
 }
 
 void repl() {
+    jmp_buf recovery_point;
     object* obj, * result;
+#ifdef HAVE_READLINE
+    bool use_readline_prompt = isatty(fileno(stdin));
+#else
+    bool use_readline_prompt = false;
+#endif
+    set_error_recovery(&recovery_point);
+
     for(; ;) {
-        printf("> ");
+        if(setjmp(recovery_point) != 0) {
+            gc_collect();
+        }
+        if(!use_readline_prompt) {
+            printf("> ");
+            fflush(stdout);
+        }
         obj = reader(stdin);
         if(obj == NULL){
             break;
@@ -28,8 +51,57 @@ void repl() {
         else {
             write(stdout, result);
             printf("\n");
+            fflush(stdout);
         }
+        gc_collect();
     }
+    clear_error_recovery();
+}
+
+static void eval_source_file(FILE* source_file) {
+    char* pre_buf = read_source(source_file);
+    char* buf;
+    token* tokens;
+    token_list* list;
+    jmp_buf recovery_point;
+
+    if(pre_buf == NULL)
+        return;
+
+    buf = buf_pre_handle(pre_buf);
+    free(pre_buf);
+
+    tokens = gen_token(buf);
+    free(buf);
+
+    list = gen_token_list(tokens);
+
+    set_error_recovery(&recovery_point);
+    while(list->token_pointer != NULL) {
+        volatile token* token_before = list->token_pointer;
+        object* obj;
+        object* result;
+
+        if(setjmp(recovery_point) != 0) {
+            gc_collect();
+            if(list->token_pointer == token_before && list->token_pointer != NULL)
+                list_iter(list);
+            continue;
+        }
+        obj = parse(list);
+        result = eval(obj, the_global_environment);
+        if(result == NULL) {
+            error_handle(stderr, "eval return a null object\n", EXIT_FAILURE);
+        }
+        if(result != ok_symbol) {
+            write(stdout, result);
+            printf("\n");
+            fflush(stdout);
+        }
+        gc_collect();
+    }
+    clear_error_recovery();
+    destroy_token_list(list);
 }
 
 int main(int argc, char** argv) {
@@ -49,11 +121,7 @@ int main(int argc, char** argv) {
             error_handle(stderr, "no file name\n", EXIT_FAILURE);
         }
         else {
-            int filename_len = (int)strlen(argv[2]);
-            if(!(argv[2][filename_len - 1] == 'm' &&
-                 argv[2][filename_len - 2] == 'c' &&
-                 argv[2][filename_len - 3] == 's' &&
-                 argv[2][filename_len - 4] == '.')) {
+            if(!has_scm_suffix(argv[2])) {
                 error_handle(stderr, "unexcepted file type, require .scm\n", EXIT_FAILURE);
             }
 
@@ -65,28 +133,12 @@ int main(int argc, char** argv) {
             }
 
             /* start the interpreter process */
-            object* obj, * result;
             init_built_in();
             print_prompt();
             printf("> evaluating %s\n", argv[2]);
-
-            token_list* list = gen_token_list(
-                    gen_token(
-                            buf_pre_handle(
-                                    read(
-                                            source_file))));
-
-            while(list->token_pointer != NULL) {
-                obj = parse(list);
-                result = eval(obj, the_global_environment);
-                if(result == NULL) {
-                    error_handle(stderr, "eval return a null object\n", EXIT_FAILURE);
-                }
-                if(result != ok_symbol) {
-                    write(stdout, result);
-                    printf("\n");
-                }
-            }
+            fflush(stdout);
+            eval_source_file(source_file);
+            fclose(source_file);
             repl();
         }
     }

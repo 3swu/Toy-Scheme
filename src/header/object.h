@@ -7,14 +7,19 @@
 #define SCHEME_OBJECT_H
 
 #include <stdbool.h>
+#include <stdio.h>
+#include <setjmp.h>
 
 typedef enum {THE_EMPTY_LIST, BOOLEAN, SYMBOL,
               FIXNUM, CHARACTER, STRING, PAIR,
+              VECTOR, PORT, MACRO, CONTINUATION,
               PRIMITIVE_PROC, COMPOUND_PROC}
               object_type;
 
 typedef struct object {
     object_type type;
+    bool gc_marked;
+    struct object* gc_next;
     union {
         struct {
             bool value;
@@ -36,7 +41,27 @@ typedef struct object {
             struct object* cdr;
         } pair;
         struct {
-            struct objetc* (*fun) (struct object* arguement);
+            struct object* elements;
+            size_t length;
+        } vector;
+        struct {
+            FILE* file;
+            bool is_input;
+            bool is_output;
+            bool close_on_gc;
+        } port;
+        struct {
+            struct object* literals;
+            struct object* rules;
+            struct object* env;
+        } macro;
+        struct {
+            jmp_buf return_point;
+            bool active;
+            struct object* value;
+        } continuation;
+        struct {
+            struct object* (*fun) (struct object* argument);
         } primitive_proc;
         struct {
             struct object* parameters;
@@ -61,6 +86,14 @@ extern bool is_character     (object* obj);
 extern bool is_string        (object* obj);
 
 extern bool is_pair          (object* obj);
+
+extern bool is_vector        (object* obj);
+
+extern bool is_port          (object* obj);
+
+extern bool is_macro         (object* obj);
+
+extern bool is_continuation  (object* obj);
 
 extern bool is_primitive_proc(object* obj);
 
@@ -87,33 +120,54 @@ extern object* make_boolean(bool value);
 
 extern object* make_fixnum(long value);
 
+extern object* make_character(char value);
+
 extern object* make_string(char* str);
 
 extern object* make_symbol(char* str);
+
+extern object* make_vector(object* elements, size_t length);
+
+extern object* make_port(FILE* file, bool is_input, bool is_output, bool close_on_gc);
+
+extern object* make_macro(object* literals, object* rules, object* env);
+
+extern object* make_continuation(void);
+
+extern void gc_collect(void);
 
 /**** global object constructor ****/
 extern object* make_symbol_table();
 
 extern object* get_the_empty_environment();
 
-object *true_obj;
-object *false_obj;
-object *the_empty_list;
-object *symbol_table;
-object *quote_symbol;
-object *define_symbol;
-object *set_symbol;
-object *ok_symbol;
-object *if_symbol;
-object *lambda_symbol;
-object *begin_symbol;
-object *cond_symbol;
-object *else_symbol;
-object *let_symbol;
-object *and_symbol;
-object *or_symbol;
-object *eof_object;
-object *the_empty_environment;
-object *the_global_environment;
+extern object *true_obj;
+extern object *false_obj;
+extern object *the_empty_list;
+extern object *symbol_table;
+extern object *quote_symbol;
+extern object *quasiquote_symbol;
+extern object *unquote_symbol;
+extern object *unquote_splicing_symbol;
+extern object *define_symbol;
+extern object *define_syntax_symbol;
+extern object *syntax_rules_symbol;
+extern object *ellipsis_symbol;
+extern object *set_symbol;
+extern object *ok_symbol;
+extern object *if_symbol;
+extern object *lambda_symbol;
+extern object *begin_symbol;
+extern object *cond_symbol;
+extern object *else_symbol;
+extern object *let_symbol;
+extern object *let_star_symbol;
+extern object *letrec_symbol;
+extern object *and_symbol;
+extern object *or_symbol;
+extern object *unassigned_symbol;
+extern object *eof_object;
+extern object *the_empty_environment;
+extern object *the_global_environment;
 
 #endif //SCHEME_OBJECT_H

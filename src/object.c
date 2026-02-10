@@ -4,9 +4,142 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include "header/object.h"
 #include "header/error.h"
+
+static object* gc_allocated_objects = NULL;
+
+static char* copy_string(const char* str) {
+    size_t len;
+    char* dst;
+
+    if(str == NULL)
+        return NULL;
+
+    len = strlen(str);
+    dst = (char*) malloc((len + 1) * sizeof(char));
+    if(dst == NULL)
+        error_handle(stderr, "out of memory", EXIT_FAILURE);
+
+    memcpy(dst, str, len + 1);
+    return dst;
+}
+
+static void gc_mark(object* obj) {
+    if(obj == NULL || obj->gc_marked)
+        return;
+
+    obj->gc_marked = true;
+    switch(obj->type) {
+        case PAIR:
+            gc_mark(obj->data.pair.car);
+            gc_mark(obj->data.pair.cdr);
+            break;
+        case VECTOR:
+            gc_mark(obj->data.vector.elements);
+            break;
+        case MACRO:
+            gc_mark(obj->data.macro.literals);
+            gc_mark(obj->data.macro.rules);
+            gc_mark(obj->data.macro.env);
+            break;
+        case CONTINUATION:
+            gc_mark(obj->data.continuation.value);
+            break;
+        case COMPOUND_PROC:
+            gc_mark(obj->data.compound_proc.parameters);
+            gc_mark(obj->data.compound_proc.body);
+            gc_mark(obj->data.compound_proc.env);
+            break;
+        default:
+            break;
+    }
+}
+
+static void gc_mark_roots(void) {
+    gc_mark(true_obj);
+    gc_mark(false_obj);
+    gc_mark(the_empty_list);
+    gc_mark(symbol_table);
+    gc_mark(quote_symbol);
+    gc_mark(quasiquote_symbol);
+    gc_mark(unquote_symbol);
+    gc_mark(unquote_splicing_symbol);
+    gc_mark(define_symbol);
+    gc_mark(define_syntax_symbol);
+    gc_mark(syntax_rules_symbol);
+    gc_mark(ellipsis_symbol);
+    gc_mark(set_symbol);
+    gc_mark(ok_symbol);
+    gc_mark(if_symbol);
+    gc_mark(lambda_symbol);
+    gc_mark(begin_symbol);
+    gc_mark(cond_symbol);
+    gc_mark(else_symbol);
+    gc_mark(let_symbol);
+    gc_mark(let_star_symbol);
+    gc_mark(letrec_symbol);
+    gc_mark(and_symbol);
+    gc_mark(or_symbol);
+    gc_mark(unassigned_symbol);
+    gc_mark(eof_object);
+    gc_mark(the_empty_environment);
+    gc_mark(the_global_environment);
+}
+
+static void gc_sweep(void) {
+    object** current = &gc_allocated_objects;
+
+    while(*current != NULL) {
+        object* obj = *current;
+        if(!obj->gc_marked) {
+            *current = obj->gc_next;
+            if(obj->type == SYMBOL && obj->data.symbol.value != NULL)
+                free(obj->data.symbol.value);
+            if(obj->type == STRING && obj->data.string.value != NULL)
+                free(obj->data.string.value);
+            if(obj->type == PORT &&
+               obj->data.port.file != NULL &&
+               obj->data.port.close_on_gc)
+                fclose(obj->data.port.file);
+            free(obj);
+        }
+        else {
+            obj->gc_marked = false;
+            current = &obj->gc_next;
+        }
+    }
+}
+
+object *true_obj = NULL;
+object *false_obj = NULL;
+object *the_empty_list = NULL;
+object *symbol_table = NULL;
+object *quote_symbol = NULL;
+object *quasiquote_symbol = NULL;
+object *unquote_symbol = NULL;
+object *unquote_splicing_symbol = NULL;
+object *define_symbol = NULL;
+object *define_syntax_symbol = NULL;
+object *syntax_rules_symbol = NULL;
+object *ellipsis_symbol = NULL;
+object *set_symbol = NULL;
+object *ok_symbol = NULL;
+object *if_symbol = NULL;
+object *lambda_symbol = NULL;
+object *begin_symbol = NULL;
+object *cond_symbol = NULL;
+object *else_symbol = NULL;
+object *let_symbol = NULL;
+object *let_star_symbol = NULL;
+object *letrec_symbol = NULL;
+object *and_symbol = NULL;
+object *or_symbol = NULL;
+object *unassigned_symbol = NULL;
+object *eof_object = NULL;
+object *the_empty_environment = NULL;
+object *the_global_environment = NULL;
 
 object* alloc_object() {
     object* obj = (object*) malloc (sizeof(object));
@@ -14,6 +147,15 @@ object* alloc_object() {
     if(obj == NULL){
         error_handle(stderr, "out of memory", EXIT_FAILURE);
     }
+    obj->gc_marked = false;
+    obj->gc_next = gc_allocated_objects;
+    gc_allocated_objects = obj;
+    return obj;
+}
+
+void gc_collect(void) {
+    gc_mark_roots();
+    gc_sweep();
 }
 
 bool is_empty_list(object* obj) {
@@ -44,6 +186,22 @@ bool is_pair(object* obj) {
     return obj->type == PAIR ? true : false;
 }
 
+bool is_vector(object* obj) {
+    return obj->type == VECTOR ? true : false;
+}
+
+bool is_port(object* obj) {
+    return obj->type == PORT ? true : false;
+}
+
+bool is_macro(object* obj) {
+    return obj->type == MACRO ? true : false;
+}
+
+bool is_continuation(object* obj) {
+    return obj->type == CONTINUATION ? true : false;
+}
+
 bool is_primitive_proc(object* obj) {
     return obj->type == PRIMITIVE_PROC ? true : false;
 }
@@ -53,12 +211,12 @@ bool is_compound_proc(object* obj) {
 }
 
 bool is_true(object* obj) {
-    return obj->type == BOOLEAN &&
-           obj->data.boolean.value == true ? true : false;
+    return obj != NULL && !is_false(obj);
 }
 
 bool is_false(object* obj) {
-    return obj->type == BOOLEAN &&
+    return obj != NULL &&
+           obj->type == BOOLEAN &&
            obj->data.boolean.value == false ? true : false;
 }
 
@@ -112,11 +270,18 @@ object* make_fixnum(long value) {
      return obj;
 }
 
+object* make_character(char value) {
+    object* obj = alloc_object();
+    obj->type = CHARACTER;
+    obj->data.character.value = value;
+    return obj;
+}
+
 object* make_string(char* str) {
 
     object* obj = alloc_object();
     obj->type = STRING;
-    obj->data.string.value = str;
+    obj->data.string.value = copy_string(str);
     return obj;
 }
 
@@ -134,9 +299,44 @@ object* make_symbol(char* str) {
     /* create symbol and add into symbol table */
     object* obj = alloc_object();
     obj->type = SYMBOL;
-    obj->data.symbol.value = str;
+    obj->data.symbol.value = copy_string(str);
 
     symbol_table = cons(obj, symbol_table);
+    return obj;
+}
+
+object* make_vector(object* elements, size_t length) {
+    object* obj = alloc_object();
+    obj->type = VECTOR;
+    obj->data.vector.elements = elements;
+    obj->data.vector.length = length;
+    return obj;
+}
+
+object* make_port(FILE* file, bool is_input, bool is_output, bool close_on_gc) {
+    object* obj = alloc_object();
+    obj->type = PORT;
+    obj->data.port.file = file;
+    obj->data.port.is_input = is_input;
+    obj->data.port.is_output = is_output;
+    obj->data.port.close_on_gc = close_on_gc;
+    return obj;
+}
+
+object* make_macro(object* literals, object* rules, object* env) {
+    object* obj = alloc_object();
+    obj->type = MACRO;
+    obj->data.macro.literals = literals;
+    obj->data.macro.rules = rules;
+    obj->data.macro.env = env;
+    return obj;
+}
+
+object* make_continuation(void) {
+    object* obj = alloc_object();
+    obj->type = CONTINUATION;
+    obj->data.continuation.active = false;
+    obj->data.continuation.value = NULL;
     return obj;
 }
 
