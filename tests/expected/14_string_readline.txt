@@ -1,0 +1,7 @@
+3
+#\b
+"bcd"
+"toy-scheme"
+"first line"
+"second line"
+#t

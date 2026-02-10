@@ -1,0 +1,10 @@
+(string-length "abc")
+(string-ref "abc" 1)
+(substring "abcdef" 1 4)
+(string-append "toy" "-" "scheme")
+
+(define p (open-input-file "tests/fixtures/readline_sample.txt"))
+(read-line p)
+(read-line p)
+(eof-object? (read-line p))
+(close-input-port p)

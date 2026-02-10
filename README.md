@@ -58,9 +58,11 @@
 + `string->number` 将字符串转换为整数
 + `symbol->string` 将符号转换为字符串
 + `string->symbol` 将字符串转换为符号
++ `string-length` / `string-ref` / `substring` / `string-append`
 + `char->integer` / `integer->char`
 + `environment` 查看全局环境中绑定的变量
 + `read` / `write` / `display` / `newline`
++ `read-line` / `eof-object?`
 + `open-input-file` / `open-output-file`
 + `close-input-port` / `close-output-port`
 + `current-input-port` / `current-output-port`
@@ -100,6 +102,12 @@ USE_SUDO=1 ./INSTALL
 ./TEST
 ```
 测试中间产物会放在项目目录下的 `./test-artifacts/`。
+
+### Examples
+---
+- 元解释器：`./Toy-Scheme -f examples/meta-scheme/demo.scm`
+- 线性回归（梯度下降）：`./Toy-Scheme -f examples/ml-linear-regression/linear_regression.scm`
+- CSV + SQL 子集引擎：`./Toy-Scheme -f examples/sql-engine/demo.scm`
 
 ### Requirement
 ---

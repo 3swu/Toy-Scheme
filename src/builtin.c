@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include "header/builtin.h"
 #include "header/object.h"
 #include "header/environment.h"
@@ -509,6 +510,98 @@ static object* string_to_symbol_procedure(object* arguments) {
     return make_symbol(car(arguments)->data.string.value);
 }
 
+static object* string_length_procedure(object* arguments) {
+    size_t len;
+    require_exact_args("string-length", arguments, 1);
+    require_string_arg("string-length", car(arguments), 1);
+    len = strlen(car(arguments)->data.string.value);
+    if(len > (size_t)LONG_MAX)
+        primitive_error("string-length", "result out of range");
+    return make_fixnum((long)len);
+}
+
+static object* string_ref_procedure(object* arguments) {
+    object* string_obj;
+    long index;
+    size_t len;
+
+    require_exact_args("string-ref", arguments, 2);
+    string_obj = car(arguments);
+    require_string_arg("string-ref", string_obj, 1);
+    require_fixnum_arg("string-ref", cadr(arguments), 2);
+
+    index = cadr(arguments)->data.fixnum.value;
+    len = strlen(string_obj->data.string.value);
+    if(index < 0 || (size_t)index >= len)
+        primitive_error("string-ref", "index out of bounds");
+    return make_character(string_obj->data.string.value[index]);
+}
+
+static object* substring_procedure(object* arguments) {
+    object* string_obj;
+    long start;
+    long end;
+    size_t len;
+    size_t slice_len;
+    char* buffer;
+    object* result;
+
+    require_exact_args("substring", arguments, 3);
+    string_obj = car(arguments);
+    require_string_arg("substring", string_obj, 1);
+    require_fixnum_arg("substring", cadr(arguments), 2);
+    require_fixnum_arg("substring", caddr(arguments), 3);
+
+    start = cadr(arguments)->data.fixnum.value;
+    end = caddr(arguments)->data.fixnum.value;
+    len = strlen(string_obj->data.string.value);
+    if(start < 0 || end < 0 || start > end || (size_t)end > len)
+        primitive_error("substring", "invalid start/end range");
+
+    slice_len = (size_t)(end - start);
+    buffer = (char*) malloc(slice_len + 1);
+    if(buffer == NULL)
+        primitive_error("substring", "out of memory");
+    if(slice_len > 0)
+        memcpy(buffer, string_obj->data.string.value + start, slice_len);
+    buffer[slice_len] = '\0';
+    result = make_string(buffer);
+    free(buffer);
+    return result;
+}
+
+static object* string_append_procedure(object* arguments) {
+    size_t total_len = 0;
+    object* cursor = arguments;
+    char* buffer;
+    char* write_cursor;
+    object* result;
+    int index = 1;
+
+    while(!is_empty_list(cursor)) {
+        require_string_arg("string-append", car(cursor), index++);
+        total_len += strlen(car(cursor)->data.string.value);
+        cursor = cdr(cursor);
+    }
+
+    buffer = (char*) malloc(total_len + 1);
+    if(buffer == NULL)
+        primitive_error("string-append", "out of memory");
+    write_cursor = buffer;
+    cursor = arguments;
+    while(!is_empty_list(cursor)) {
+        size_t len = strlen(car(cursor)->data.string.value);
+        memcpy(write_cursor, car(cursor)->data.string.value, len);
+        write_cursor += len;
+        cursor = cdr(cursor);
+    }
+    *write_cursor = '\0';
+
+    result = make_string(buffer);
+    free(buffer);
+    return result;
+}
+
 static object* environment_procedure(object* arguments) {
     require_exact_args("environment", arguments, 0);
     return the_global_environment;
@@ -894,6 +987,66 @@ static object* read_procedure(object* arguments) {
     return result;
 }
 
+static object* read_line_procedure(object* arguments) {
+    object* port = NULL;
+    FILE* file;
+    size_t capacity = 128;
+    size_t length = 0;
+    char* buffer;
+    int ch;
+    object* result;
+
+    if(argument_count(arguments) == 0)
+        port = make_port(stdin, true, false, false);
+    else {
+        require_exact_args("read-line", arguments, 1);
+        port = car(arguments);
+    }
+
+    require_input_port_arg("read-line", port, 1);
+    file = port->data.port.file;
+
+    buffer = (char*) malloc(capacity);
+    if(buffer == NULL)
+        primitive_error("read-line", "out of memory");
+
+    while((ch = fgetc(file)) != EOF) {
+        if(ch == '\n')
+            break;
+
+        if(length + 1 >= capacity) {
+            char* resized;
+            capacity *= 2;
+            resized = (char*) realloc(buffer, capacity);
+            if(resized == NULL) {
+                free(buffer);
+                primitive_error("read-line", "out of memory");
+            }
+            buffer = resized;
+        }
+
+        buffer[length++] = (char)ch;
+    }
+
+    if(ch == EOF && length == 0) {
+        free(buffer);
+        return eof_object;
+    }
+
+    if(length > 0 && buffer[length - 1] == '\r')
+        length--;
+
+    buffer[length] = '\0';
+    result = make_string(buffer);
+    free(buffer);
+    return result;
+}
+
+static object* eof_object_predicate_procedure(object* arguments) {
+    require_exact_args("eof-object?", arguments, 1);
+    return car(arguments) == eof_object ? true_obj : false_obj;
+}
+
 static object* write_procedure(object* arguments) {
     object* target_port;
     require_min_args("write", arguments, 1);
@@ -986,8 +1139,14 @@ void add_primitive_to_environment(object* env) {
     ADD_PRIMITIVE_PROCEDURE("string->number", string_to_number_procedure)
     ADD_PRIMITIVE_PROCEDURE("symbol->string", symbol_to_string_procedure)
     ADD_PRIMITIVE_PROCEDURE("string->symbol", string_to_symbol_procedure)
+    ADD_PRIMITIVE_PROCEDURE("string-length", string_length_procedure)
+    ADD_PRIMITIVE_PROCEDURE("string-ref", string_ref_procedure)
+    ADD_PRIMITIVE_PROCEDURE("substring", substring_procedure)
+    ADD_PRIMITIVE_PROCEDURE("string-append", string_append_procedure)
     ADD_PRIMITIVE_PROCEDURE("environment",         environment_procedure)
     ADD_PRIMITIVE_PROCEDURE("read",                     read_procedure)
+    ADD_PRIMITIVE_PROCEDURE("read-line",           read_line_procedure)
+    ADD_PRIMITIVE_PROCEDURE("eof-object?", eof_object_predicate_procedure)
     ADD_PRIMITIVE_PROCEDURE("write",                   write_procedure)
     ADD_PRIMITIVE_PROCEDURE("display",               display_procedure)
     ADD_PRIMITIVE_PROCEDURE("newline",               newline_procedure)
