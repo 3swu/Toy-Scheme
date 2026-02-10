@@ -30,6 +30,8 @@ token* gen_token(char* buf);
 
 token_list* gen_token_list(token* token_l);
 
+void destroy_token_list(token_list* list);
+
 /***** parse *****/
 extern
 object* parse(token_list* list);

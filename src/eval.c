@@ -72,7 +72,7 @@ object* eval(object* exp, object* env) {
         while(!is_last_exp(exp)) {
             result = eval(first_exp(exp), env);
             if(is_true(result))
-                return true_obj;
+                return result;
 
             exp = rest_exp(exp);
         }
@@ -158,7 +158,7 @@ object* text_of_quotation(object* exp) {
 
 object* eval_assignment(object* exp, object* env) {
     set_variable_value(assignment_varialbe(exp),
-                       assignment_value(exp),
+                       eval(assignment_value(exp), env),
                        env);
     return ok_symbol;
 }

@@ -8,6 +8,86 @@
 #include "header/object.h"
 #include "header/error.h"
 
+static object* gc_allocated_objects = NULL;
+
+static char* copy_string(const char* str) {
+    size_t len;
+    char* dst;
+
+    if(str == NULL)
+        return NULL;
+
+    len = strlen(str);
+    dst = (char*) malloc((len + 1) * sizeof(char));
+    if(dst == NULL)
+        error_handle(stderr, "out of memory", EXIT_FAILURE);
+
+    memcpy(dst, str, len + 1);
+    return dst;
+}
+
+static void gc_mark(object* obj) {
+    if(obj == NULL || obj->gc_marked)
+        return;
+
+    obj->gc_marked = true;
+    switch(obj->type) {
+        case PAIR:
+            gc_mark(obj->data.pair.car);
+            gc_mark(obj->data.pair.cdr);
+            break;
+        case COMPOUND_PROC:
+            gc_mark(obj->data.compound_proc.parameters);
+            gc_mark(obj->data.compound_proc.body);
+            gc_mark(obj->data.compound_proc.env);
+            break;
+        default:
+            break;
+    }
+}
+
+static void gc_mark_roots(void) {
+    gc_mark(true_obj);
+    gc_mark(false_obj);
+    gc_mark(the_empty_list);
+    gc_mark(symbol_table);
+    gc_mark(quote_symbol);
+    gc_mark(define_symbol);
+    gc_mark(set_symbol);
+    gc_mark(ok_symbol);
+    gc_mark(if_symbol);
+    gc_mark(lambda_symbol);
+    gc_mark(begin_symbol);
+    gc_mark(cond_symbol);
+    gc_mark(else_symbol);
+    gc_mark(let_symbol);
+    gc_mark(and_symbol);
+    gc_mark(or_symbol);
+    gc_mark(eof_object);
+    gc_mark(the_empty_environment);
+    gc_mark(the_global_environment);
+}
+
+static void gc_sweep(void) {
+    object** current = &gc_allocated_objects;
+
+    while(*current != NULL) {
+        object* obj = *current;
+        if(!obj->gc_marked) {
+            *current = obj->gc_next;
+            if(obj->type == SYMBOL && obj->data.symbol.value != NULL)
+                free(obj->data.symbol.value);
+            if(obj->type == STRING && obj->data.string.value != NULL)
+                free(obj->data.string.value);
+            free(obj);
+        }
+        else {
+            obj->gc_marked = false;
+            current = &obj->gc_next;
+        }
+    }
+}
+
 object *true_obj = NULL;
 object *false_obj = NULL;
 object *the_empty_list = NULL;
@@ -34,7 +114,15 @@ object* alloc_object() {
     if(obj == NULL){
         error_handle(stderr, "out of memory", EXIT_FAILURE);
     }
+    obj->gc_marked = false;
+    obj->gc_next = gc_allocated_objects;
+    gc_allocated_objects = obj;
     return obj;
+}
+
+void gc_collect(void) {
+    gc_mark_roots();
+    gc_sweep();
 }
 
 bool is_empty_list(object* obj) {
@@ -74,12 +162,12 @@ bool is_compound_proc(object* obj) {
 }
 
 bool is_true(object* obj) {
-    return obj->type == BOOLEAN &&
-           obj->data.boolean.value == true ? true : false;
+    return obj != NULL && !is_false(obj);
 }
 
 bool is_false(object* obj) {
-    return obj->type == BOOLEAN &&
+    return obj != NULL &&
+           obj->type == BOOLEAN &&
            obj->data.boolean.value == false ? true : false;
 }
 
@@ -137,7 +225,7 @@ object* make_string(char* str) {
 
     object* obj = alloc_object();
     obj->type = STRING;
-    obj->data.string.value = str;
+    obj->data.string.value = copy_string(str);
     return obj;
 }
 
@@ -155,7 +243,7 @@ object* make_symbol(char* str) {
     /* create symbol and add into symbol table */
     object* obj = alloc_object();
     obj->type = SYMBOL;
-    obj->data.symbol.value = str;
+    obj->data.symbol.value = copy_string(str);
 
     symbol_table = cons(obj, symbol_table);
     return obj;

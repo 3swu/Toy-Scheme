@@ -15,6 +15,8 @@ typedef enum {THE_EMPTY_LIST, BOOLEAN, SYMBOL,
 
 typedef struct object {
     object_type type;
+    bool gc_marked;
+    struct object* gc_next;
     union {
         struct {
             bool value;
@@ -90,6 +92,8 @@ extern object* make_fixnum(long value);
 extern object* make_string(char* str);
 
 extern object* make_symbol(char* str);
+
+extern void gc_collect(void);
 
 /**** global object constructor ****/
 extern object* make_symbol_table();

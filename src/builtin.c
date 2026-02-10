@@ -131,6 +131,7 @@ static object* is_less_procedure(object* arguments) {
         next = car(arguments)->data.fixnum.value;
         if(previous > next)
             return false_obj;
+        previous = next;
     }
     return true_obj;
 }
@@ -143,6 +144,7 @@ static object* is_greater_procedure(object* arguments) {
         next = car(arguments)->data.fixnum.value;
         if(previous < next)
             return false_obj;
+        previous = next;
     }
     return true_obj;
 }
@@ -224,15 +226,9 @@ static object* is_procedure_procedure(object* arguments) {
 
 static object* number_to_string_procedure(object* arguments) {
     char buffer[100];
-    char* string_value;
 
     sprintf(buffer, "%ld", car(arguments)->data.fixnum.value);
-    string_value = (char*) malloc((strlen(buffer) + 1) * sizeof(char));
-    if(string_value == NULL)
-        error_handle(stderr, "out of memory", EXIT_FAILURE);
-
-    strcpy(string_value, buffer);
-    return make_string(string_value);
+    return make_string(buffer);
 }
 
 static object* string_to_number_procedure(object* arguments) {
