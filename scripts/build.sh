@@ -24,4 +24,7 @@ else
     cmake --build "${BUILD_DIR}" --parallel
 fi
 
+ln -sfn "${BUILD_DIR}/Toy-Scheme" "${PROJECT_ROOT}/Toy-Scheme"
+
 echo "Build complete: ${BUILD_DIR}/Toy-Scheme"
+echo "Synced executable: ${PROJECT_ROOT}/Toy-Scheme"

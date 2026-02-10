@@ -9,12 +9,15 @@
 ---
 支持的表达式：
 + `quote`
++ `'` (`quote` 简写)
 + `define`
 + `if`
 + `lambda`
 + `begin`
 + `cond`
 + `let`
++ `let*`
++ `letrec`
 + `...` 
 
 支持的内部过程：
@@ -46,6 +49,7 @@
 + `symbol->string` 将符号转换为字符串
 + `string->symbol` 将字符串转换为符号
 + `environment` 查看全局环境中绑定的变量
++ `load` 加载并执行指定 Scheme 文件
 
 ### Build & Install
 ---
@@ -55,6 +59,7 @@ chmod +x ./COMPILE ./INSTALL ./TEST ./scripts/*.sh
 
 # 编译（输出在 ./build）
 ./COMPILE
+# 同时会同步根目录可执行文件 ./Toy-Scheme
 
 # 安装到 /usr/local/bin（需要管理员权限）
 USE_SUDO=1 ./INSTALL
@@ -64,8 +69,10 @@ USE_SUDO=1 ./INSTALL
 ---
 直接进入REPL环境
 ```bash
-./build/Toy-Scheme
+./Toy-Scheme
 ```
+在交互终端中支持方向键编辑、历史记录和 `(` 自动补 `)`（依赖系统 `readline/libedit`，若缺失会自动降级为原始输入模式）。
+
 解释指定的源文件，使用命令`./build/Toy-Scheme -f [file]`
 ```bash
 ./build/Toy-Scheme -f hello.scm

@@ -1,4 +1,4 @@
 undefined variable: unknown-proc
 3
-unexcepted symbol : 'abc
+unexcepted symbol : @bad
 6

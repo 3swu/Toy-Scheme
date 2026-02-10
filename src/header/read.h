@@ -22,7 +22,7 @@ typedef struct {
 } token_list;
 
 /***** read *****/
-char* read(FILE* in_stream);
+char* read_source(FILE* in_stream);
 
 char* buf_pre_handle(char* buf);
 

@@ -30,6 +30,10 @@ extern bool is_cond           (object* exp);
 
 extern bool is_let            (object* exp);
 
+extern bool is_let_star       (object* exp);
+
+extern bool is_letrec         (object* exp);
+
 extern bool is_and            (object* exp);
 
 extern bool is_or             (object* exp);
@@ -129,6 +133,10 @@ extern object* binding_parameter(object* binding);
 extern object* binding_argument(object* binding);
 
 extern object* let_bindings(object* exp);
+
+extern object* let_star_to_nested_lets(object* exp);
+
+extern object* letrec_to_let(object* exp);
 
 extern object* and_tests(object* exp);
 

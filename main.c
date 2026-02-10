@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
+extern int isatty(int fd);
+
 #include "src/header/read.h"
 #include "src/header/builtin.h"
 #include "src/header/eval.h"
@@ -23,14 +25,21 @@ static bool has_scm_suffix(const char* path) {
 void repl() {
     jmp_buf recovery_point;
     object* obj, * result;
+#ifdef HAVE_READLINE
+    bool use_readline_prompt = isatty(fileno(stdin));
+#else
+    bool use_readline_prompt = false;
+#endif
     set_error_recovery(&recovery_point);
 
     for(; ;) {
         if(setjmp(recovery_point) != 0) {
             gc_collect();
         }
-        printf("> ");
-        fflush(stdout);
+        if(!use_readline_prompt) {
+            printf("> ");
+            fflush(stdout);
+        }
         obj = reader(stdin);
         if(obj == NULL){
             break;
@@ -50,7 +59,7 @@ void repl() {
 }
 
 static void eval_source_file(FILE* source_file) {
-    char* pre_buf = read(source_file);
+    char* pre_buf = read_source(source_file);
     char* buf;
     token* tokens;
     token_list* list;

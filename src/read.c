@@ -11,9 +11,160 @@
 #include <string.h>
 #include <ctype.h>
 
+extern int isatty(int fd);
+
+#ifdef HAVE_READLINE
+#include <readline/history.h>
+#include <readline/readline.h>
+#endif
+
 #define MAXSIZE 10240
 
-char* read(FILE* in_stream) { /* from in_stream to buffer */
+#ifdef HAVE_READLINE
+static bool repl_keymap_initialized = false;
+
+static bool cursor_in_string(void) {
+    bool in_string = false;
+    bool escape_in_string = false;
+
+    for(int i = 0; i < rl_point; i++) {
+        char ch = rl_line_buffer[i];
+
+        if(in_string) {
+            if(escape_in_string) {
+                escape_in_string = false;
+            }
+            else if(ch == '\\') {
+                escape_in_string = true;
+            }
+            else if(ch == '"') {
+                in_string = false;
+            }
+        }
+        else if(ch == '"') {
+            in_string = true;
+        }
+    }
+
+    return in_string;
+}
+
+static int insert_pair_text(const char* pair_text) {
+    if(rl_insert_text(pair_text) != 0)
+        return 0;
+    if(rl_point > 0)
+        rl_point--;
+    rl_redisplay();
+    return 0;
+}
+
+static int insert_paren_pair(int count, int key) {
+    if(cursor_in_string())
+        return rl_insert(count, key);
+
+    return insert_pair_text("()");
+}
+
+static int smart_close_paren(int count, int key) {
+    if(!cursor_in_string() && rl_line_buffer[rl_point] == ')') {
+        rl_point++;
+        rl_redisplay();
+        return 0;
+    }
+    return rl_insert(count, key);
+}
+
+static void ensure_repl_keymap_initialized(void) {
+    if(repl_keymap_initialized)
+        return;
+
+    rl_bind_key('(', insert_paren_pair);
+    rl_bind_key(')', smart_close_paren);
+    repl_keymap_initialized = true;
+}
+
+static void append_char_with_resize(char** buf, size_t* capacity, int* index, char ch) {
+    if((size_t)(*index) >= *capacity - 1) {
+        *capacity *= 2;
+        *buf = (char*) realloc(*buf, *capacity * sizeof(char));
+        if(*buf == NULL)
+            error_handle(stderr, "out of memory", EXIT_FAILURE);
+    }
+    (*buf)[(*index)++] = ch;
+}
+
+static char* read_with_readline(void) {
+    char* buf = (char*) malloc(MAXSIZE * sizeof(char));
+    size_t capacity = MAXSIZE;
+    int i = 0;
+    int paren_depth = 0;
+    bool in_string = false;
+    bool escape_in_string = false;
+    bool seen_non_whitespace = false;
+
+    if(buf == NULL)
+        error_handle(stderr, "out of memory", EXIT_FAILURE);
+
+    ensure_repl_keymap_initialized();
+
+    while(true) {
+        const char* prompt = (i == 0) ? "> " : "... ";
+        char* line = readline(prompt);
+
+        if(line == NULL) {
+            if(!seen_non_whitespace) {
+                free(buf);
+                return NULL;
+            }
+            break;
+        }
+
+        if(line[0] != '\0')
+            add_history(line);
+
+        for(size_t j = 0; line[j] != '\0'; j++) {
+            char ch = line[j];
+            append_char_with_resize(&buf, &capacity, &i, ch);
+
+            if(!isspace((unsigned char)ch))
+                seen_non_whitespace = true;
+
+            if(in_string) {
+                if(escape_in_string) {
+                    escape_in_string = false;
+                }
+                else if(ch == '\\') {
+                    escape_in_string = true;
+                }
+                else if(ch == '"') {
+                    in_string = false;
+                }
+            }
+            else {
+                if(ch == '"')
+                    in_string = true;
+                else if(ch == '(')
+                    paren_depth++;
+                else if(ch == ')' && paren_depth > 0)
+                    paren_depth--;
+            }
+        }
+
+        append_char_with_resize(&buf, &capacity, &i, '\n');
+        free(line);
+
+        if(!seen_non_whitespace)
+            continue;
+        if(!in_string && paren_depth == 0)
+            break;
+    }
+
+    append_char_with_resize(&buf, &capacity, &i, '\0');
+    return buf;
+}
+#endif
+
+char* read_source(FILE* in_stream) { /* from in_stream to buffer */
     char *buf;
     int ch;
     int i = 0;
@@ -24,14 +175,40 @@ char* read(FILE* in_stream) { /* from in_stream to buffer */
         error_handle(stderr, "out of memory", EXIT_FAILURE);
 
     if(in_stream == stdin) {
-        ch = getc(in_stream);
-        if(ch == EOF) {
-            free(buf);
-            return NULL;
-        }
+#ifdef HAVE_READLINE
+        if(isatty(fileno(in_stream)))
+            return read_with_readline();
+#endif
 
-        while(ch != EOF && ch != '\n') {
+        int paren_depth = 0;
+        bool in_string = false;
+        bool seen_non_whitespace = false;
+
+        while((ch = getc(in_stream)) != EOF) {
+            if(ch == '\n' && !in_string && paren_depth == 0) {
+                if(seen_non_whitespace)
+                    break;
+                else
+                    continue;
+            }
+
             buf[i++] = (char)ch;
+            if(!isspace((unsigned char)ch))
+                seen_non_whitespace = true;
+
+            if(ch == '"' && (i < 2 || buf[i - 2] != '\\'))
+                in_string = !in_string;
+            else if(!in_string) {
+                if(ch == '(')
+                    paren_depth++;
+                else if(ch == ')' && paren_depth > 0)
+                    paren_depth--;
+            }
+
+            if(ch == '\n' && !in_string && paren_depth > 0) {
+                printf("... ");
+                fflush(stdout);
+            }
 
             if((size_t)i >= capacity - 1) {
                 capacity *= 2;
@@ -39,7 +216,11 @@ char* read(FILE* in_stream) { /* from in_stream to buffer */
                 if(buf == NULL)
                     error_handle(stderr, "out of memory", EXIT_FAILURE);
             }
-            ch = getc(in_stream);
+        }
+
+        if(ch == EOF && !seen_non_whitespace) {
+            free(buf);
+            return NULL;
         }
     }
     else {
@@ -91,6 +272,12 @@ char* buf_pre_handle(char* pre_buf) { /* add space and remove comments */
             case ')':
                 buf[buf_i++] = ' ';
                 buf[buf_i++] = ')';
+                buf[buf_i++] = ' ';
+                pbuf_i++;
+                break;
+            case '\'':
+                buf[buf_i++] = ' ';
+                buf[buf_i++] = '\'';
                 buf[buf_i++] = ' ';
                 pbuf_i++;
                 break;
@@ -208,11 +395,24 @@ void destroy_token_list(token_list* list) {
 }
 
 object* parse(token_list* list) {
+    if(list == NULL || list->token_pointer == NULL)
+        error_handle(stderr, "unexpected EOF while reading", EXIT_FAILURE);
+
     char* token_value = list->token_pointer->value;
 
     if(strcmp(token_value, "(") == 0) {
         list_iter(list);
         return parse_pair(list);
+    }
+
+    if(strcmp(token_value, "'") == 0) {
+        object* quoted_exp;
+        list_iter(list);
+        if(list->token_pointer == NULL)
+            error_handle(stderr, "quote missing expression\n", EXIT_FAILURE);
+
+        quoted_exp = parse(list);
+        return cons(quote_symbol, cons(quoted_exp, the_empty_list));
     }
 
     if(is_str_digit(token_value)) {
@@ -247,6 +447,9 @@ object* parse(token_list* list) {
 }
 
 object* parse_pair(token_list* list) {
+    if(list->token_pointer == NULL)
+        error_handle(stderr, "unexpected EOF while reading list", EXIT_FAILURE);
+
     if(strcmp(list->token_pointer->value, ")") == 0) {
         list_iter(list);
         return the_empty_list;
@@ -319,7 +522,7 @@ object* parse_string(char* str) {
 
 object* reader(FILE* in) {
     while(true) {
-        char* pre_buf = read(in);
+        char* pre_buf = read_source(in);
         char* buf;
         token* t;
         token_list* list;

@@ -1,5 +1,5 @@
 (define keep 1)
 (unknown-proc 1)
 (+ keep 2)
-'abc
+@bad
 (+ keep 5)

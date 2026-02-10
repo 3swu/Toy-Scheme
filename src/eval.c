@@ -16,80 +16,116 @@
 
 object* eval(object* exp, object* env) {
 
-    /* deal with this cases */
-    object* result;
+    for(;;) {
+        object* result;
 
-    if(is_self_evaluating(exp)) {
-        return exp;
-    }
-    else if(is_variable(exp)) {
-        return lookup_variable_value(exp, env);
-    }
-    else if(is_quoted(exp)) {
-        return text_of_quotation(exp);
-    }
-    else if(is_assignment(exp)) {
-        return eval_assignment(exp, env);
-    }
-    else if(is_definition(exp)) {
-        return eval_definition(exp, env);
-    }
-    else if(is_if(exp)) {
-        return eval_if(exp, env);
-    }
-    else if(is_lambda(exp)) {
-        return make_procedure(lambda_parameters(exp),
-                              lambda_body(exp),
-                              env);
-    }
-    else if(is_begin(exp)) {
-        return eval_sequence(begin_actions(exp), env);
-    }
-    else if(is_cond(exp)) {
-        return eval(cond_to_if(exp), env);
-    }
-    else if(is_let(exp)) {
-        return eval(let_to_application(exp), env);
-    }
-    else if(is_and(exp)) {
-        exp = and_tests(exp);
-        if(is_empty_list(exp))
-            return true_obj;
-        while(!is_last_exp(exp)) {
-            result = eval(first_exp(exp), env);
-            if(is_false(result))
+        if(is_self_evaluating(exp)) {
+            return exp;
+        }
+        else if(is_variable(exp)) {
+            return lookup_variable_value(exp, env);
+        }
+        else if(is_quoted(exp)) {
+            return text_of_quotation(exp);
+        }
+        else if(is_assignment(exp)) {
+            return eval_assignment(exp, env);
+        }
+        else if(is_definition(exp)) {
+            return eval_definition(exp, env);
+        }
+        else if(is_if(exp)) {
+            exp = is_true(eval(if_predicate(exp), env)) ?
+                  if_consequent(exp) :
+                  if_alternative(exp);
+            continue;
+        }
+        else if(is_lambda(exp)) {
+            return make_procedure(lambda_parameters(exp),
+                                  lambda_body(exp),
+                                  env);
+        }
+        else if(is_begin(exp)) {
+            exp = begin_actions(exp);
+            while(!is_last_exp(exp)) {
+                eval(first_exp(exp), env);
+                exp = rest_exp(exp);
+            }
+            exp = first_exp(exp);
+            continue;
+        }
+        else if(is_cond(exp)) {
+            exp = cond_to_if(exp);
+            continue;
+        }
+        else if(is_let(exp)) {
+            exp = let_to_application(exp);
+            continue;
+        }
+        else if(is_let_star(exp)) {
+            exp = let_star_to_nested_lets(exp);
+            continue;
+        }
+        else if(is_letrec(exp)) {
+            exp = letrec_to_let(exp);
+            continue;
+        }
+        else if(is_and(exp)) {
+            exp = and_tests(exp);
+            if(is_empty_list(exp))
+                return true_obj;
+            while(!is_last_exp(exp)) {
+                result = eval(first_exp(exp), env);
+                if(is_false(result))
+                    return false_obj;
+
+                exp = rest_exp(exp);
+            }
+            exp = first_exp(exp);
+            continue;
+        }
+        else if(is_or(exp)) {
+            exp = or_tests(exp);
+            if(is_empty_list(exp))
                 return false_obj;
+            while(!is_last_exp(exp)) {
+                result = eval(first_exp(exp), env);
+                if(is_true(result))
+                    return result;
 
-            exp = rest_exp(exp);
+                exp = rest_exp(exp);
+            }
+            exp = first_exp(exp);
+            continue;
         }
-        exp =first_exp(exp);
-        return eval(exp, env);
-    }
-    else if(is_or(exp)) {
-        exp = or_tests(exp);
-        if(is_empty_list(exp))
-            return false_obj;
-        while(!is_last_exp(exp)) {
-            result = eval(first_exp(exp), env);
-            if(is_true(result))
-                return result;
+        else if(is_application(exp)) {
+            object* procedure = eval(operator(exp), env);
+            object* arguments = list_of_values(operands(exp), env);
 
-            exp = rest_exp(exp);
+            if(is_primitive_proc(procedure)) {
+                return (procedure->data.primitive_proc.fun)(arguments);
+            }
+            else if(is_compound_proc(procedure)) {
+                env = extend_environment(procedure->data.compound_proc.parameters,
+                                         arguments,
+                                         procedure->data.compound_proc.env);
+                exp = make_begin(procedure->data.compound_proc.body);
+                continue;
+            }
+            else {
+                error_handle_with_object(stderr,
+                                         "Unknown procedure type --EVAL",
+                                         EXIT_FAILURE,
+                                         procedure);
+            }
         }
-        exp = first_exp(exp);
-        return eval(exp, env);
+        else {
+            error_handle_with_object(stderr,
+                                     "Unknown expression type --EVAL",
+                                     EXIT_FAILURE,
+                                     exp);
+        }
     }
-    else if(is_application(exp)) {
-        return apply(eval(operator(exp), env),
-                     list_of_values(operands(exp), env));
-    }
-    else {
-        error_handle_with_object(stderr,
-                                 "Unknown expression type --EVAL",
-                                 EXIT_FAILURE,
-                                 exp);
-    }
-    return NULL;
 }
 
 bool is_self_evaluating(object* exp) {
@@ -130,6 +166,14 @@ bool is_cond           (object* exp) {
 
 bool is_let            (object* exp) {
     return is_tagged_list(exp, let_symbol);
+}
+
+bool is_let_star       (object* exp) {
+    return is_tagged_list(exp, let_star_symbol);
+}
+
+bool is_letrec         (object* exp) {
+    return is_tagged_list(exp, letrec_symbol);
 }
 
 bool is_and            (object* exp) {
@@ -190,12 +234,11 @@ object* lambda_body(object* exp) {
 }
 
 object* eval_sequence(object* exp, object* env) {
-    if(is_last_exp(exp))
-        return eval(first_exp(exp), env);
-    else {
+    while(!is_last_exp(exp)) {
         eval(first_exp(exp), env);
-        return eval_sequence(rest_exp(exp), env);
+        exp = rest_exp(exp);
     }
+    return eval(first_exp(exp), env);
 }
 
 object* begin_actions(object* exp) {
@@ -393,6 +436,71 @@ object* binding_argument(object* binding) {
 
 object* let_bindings(object* exp) {
     return cadr(exp);
+}
+
+static object* append_lists(object* first, object* second) {
+    object* head = first;
+
+    if(is_empty_list(first))
+        return second;
+
+    while(!is_empty_list(cdr(first)))
+        first = cdr(first);
+    set_cdr(first, second);
+    return head;
+}
+
+static object* letrec_bindings_to_let_bindings(object* bindings) {
+    if(is_empty_list(bindings))
+        return the_empty_list;
+
+    return cons(
+            cons(binding_parameter(car(bindings)),
+                 cons(cons(quote_symbol,
+                           cons(unassigned_symbol, the_empty_list)),
+                      the_empty_list)),
+            letrec_bindings_to_let_bindings(cdr(bindings)));
+}
+
+static object* letrec_bindings_to_sets(object* bindings) {
+    if(is_empty_list(bindings))
+        return the_empty_list;
+
+    return cons(
+            cons(set_symbol,
+                 cons(binding_parameter(car(bindings)),
+                      cons(binding_argument(car(bindings)),
+                           the_empty_list))),
+            letrec_bindings_to_sets(cdr(bindings)));
+}
+
+object* let_star_to_nested_lets(object* exp) {
+    object* bindings = let_bindings(exp);
+    object* body = let_body(exp);
+
+    if(is_empty_list(bindings))
+        return cons(let_symbol, cons(the_empty_list, body));
+
+    if(is_empty_list(cdr(bindings)))
+        return cons(let_symbol, cons(bindings, body));
+
+    return cons(let_symbol,
+                cons(cons(car(bindings), the_empty_list),
+                     cons(let_star_to_nested_lets(
+                             cons(let_star_symbol,
+                                  cons(cdr(bindings), body))),
+                          the_empty_list)));
+}
+
+object* letrec_to_let(object* exp) {
+    object* bindings = let_bindings(exp);
+    object* body = let_body(exp);
+    object* let_bindings_seq = letrec_bindings_to_let_bindings(bindings);
+    object* set_seq = letrec_bindings_to_sets(bindings);
+
+    return cons(let_symbol,
+                cons(let_bindings_seq,
+                     append_lists(set_seq, body)));
 }
 
 object* and_tests(object* exp) {
