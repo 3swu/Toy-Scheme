@@ -20,6 +20,10 @@ extern int isatty(int fd);
 
 #define MAXSIZE 10240
 
+static object* parse_vector_elements(token_list* list, size_t* length);
+static object* parse_character(const char* token_value);
+static bool is_str_character(const char* str);
+
 #ifdef HAVE_READLINE
 static bool repl_keymap_initialized = false;
 
@@ -281,6 +285,33 @@ char* buf_pre_handle(char* pre_buf) { /* add space and remove comments */
                 buf[buf_i++] = ' ';
                 pbuf_i++;
                 break;
+            case '`':
+                buf[buf_i++] = ' ';
+                buf[buf_i++] = '`';
+                buf[buf_i++] = ' ';
+                pbuf_i++;
+                break;
+            case ',':
+                buf[buf_i++] = ' ';
+                buf[buf_i++] = ',';
+                if(pre_buf[pbuf_i + 1] == '@') {
+                    buf[buf_i++] = '@';
+                    pbuf_i++;
+                }
+                buf[buf_i++] = ' ';
+                pbuf_i++;
+                break;
+            case '#':
+                if(pre_buf[pbuf_i + 1] == '(') {
+                    buf[buf_i++] = ' ';
+                    buf[buf_i++] = '#';
+                    buf[buf_i++] = '(';
+                    buf[buf_i++] = ' ';
+                    pbuf_i += 2;
+                    break;
+                }
+                buf[buf_i++] = pre_buf[pbuf_i++];
+                break;
             case ';':
                 while(pre_buf[pbuf_i] != '\0' && pre_buf[pbuf_i] != '\n')
                     pbuf_i++;
@@ -405,6 +436,12 @@ object* parse(token_list* list) {
         return parse_pair(list);
     }
 
+    if(strcmp(token_value, "#(") == 0) {
+        size_t length = 0;
+        list_iter(list);
+        return make_vector(parse_vector_elements(list, &length), length);
+    }
+
     if(strcmp(token_value, "'") == 0) {
         object* quoted_exp;
         list_iter(list);
@@ -415,9 +452,49 @@ object* parse(token_list* list) {
         return cons(quote_symbol, cons(quoted_exp, the_empty_list));
     }
 
+    if(strcmp(token_value, "`") == 0) {
+        object* quoted_exp;
+        list_iter(list);
+        if(list->token_pointer == NULL)
+            error_handle(stderr, "quasiquote missing expression\n", EXIT_FAILURE);
+
+        quoted_exp = parse(list);
+        return cons(quasiquote_symbol, cons(quoted_exp, the_empty_list));
+    }
+
+    if(strcmp(token_value, ",") == 0) {
+        object* quoted_exp;
+        list_iter(list);
+        if(list->token_pointer == NULL)
+            error_handle(stderr, "unquote missing expression\n", EXIT_FAILURE);
+
+        quoted_exp = parse(list);
+        return cons(unquote_symbol, cons(quoted_exp, the_empty_list));
+    }
+
+    if(strcmp(token_value, ",@") == 0) {
+        object* quoted_exp;
+        list_iter(list);
+        if(list->token_pointer == NULL)
+            error_handle(stderr, "unquote-splicing missing expression\n", EXIT_FAILURE);
+
+        quoted_exp = parse(list);
+        return cons(unquote_splicing_symbol, cons(quoted_exp, the_empty_list));
+    }
+
+    if(strcmp(token_value, "...") == 0) {
+        list_iter(list);
+        return ellipsis_symbol;
+    }
+
     if(is_str_digit(token_value)) {
         list_iter(list);
         return make_fixnum(atol(token_value));
+    }
+
+    if(is_str_character(token_value)) {
+        list_iter(list);
+        return parse_character(token_value);
     }
 
     if(is_str_symbol(token_value)) {
@@ -455,6 +532,18 @@ object* parse_pair(token_list* list) {
         return the_empty_list;
     }
 
+    if(strcmp(list->token_pointer->value, ".") == 0) {
+        object* tail;
+        list_iter(list);
+        if(list->token_pointer == NULL)
+            error_handle(stderr, "dotted pair missing cdr", EXIT_FAILURE);
+        tail = parse(list);
+        if(list->token_pointer == NULL || strcmp(list->token_pointer->value, ")") != 0)
+            error_handle(stderr, "dotted pair missing closing ')'", EXIT_FAILURE);
+        list_iter(list);
+        return tail;
+    }
+
     object * car, * cdr;
     car = parse(list);
     cdr = parse_pair(list);
@@ -482,6 +571,13 @@ bool is_str_digit(char* str) {
 
 bool is_str_string(char* str) {
     return str[0] == '"' && str[strlen(str) - 1] == '"' ? true : false;
+}
+
+static bool is_str_character(const char* str) {
+    return str != NULL &&
+           str[0] == '#' &&
+           str[1] == '\\' &&
+           str[2] != '\0';
 }
 
 bool is_str_symbol(char* str) {
@@ -518,6 +614,30 @@ object* parse_string(char* str) {
     string_obj = make_string(s);
     free(s);
     return string_obj;
+}
+
+static object* parse_character(const char* token_value) {
+    const char* name = token_value + 2;
+    if(strcmp(name, "space") == 0)
+        return make_character(' ');
+    if(strcmp(name, "newline") == 0)
+        return make_character('\n');
+    if(name[0] != '\0' && name[1] == '\0')
+        return make_character(name[0]);
+    error_handle(stderr, "invalid character literal", EXIT_FAILURE);
+    return NULL;
+}
+
+static object* parse_vector_elements(token_list* list, size_t* length) {
+    if(list->token_pointer == NULL)
+        error_handle(stderr, "unexpected EOF while reading vector", EXIT_FAILURE);
+    if(strcmp(list->token_pointer->value, ")") == 0) {
+        list_iter(list);
+        return the_empty_list;
+    }
+
+    *length += 1;
+    return cons(parse(list), parse_vector_elements(list, length));
 }
 
 object* reader(FILE* in) {

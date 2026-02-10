@@ -36,6 +36,17 @@ static void gc_mark(object* obj) {
             gc_mark(obj->data.pair.car);
             gc_mark(obj->data.pair.cdr);
             break;
+        case VECTOR:
+            gc_mark(obj->data.vector.elements);
+            break;
+        case MACRO:
+            gc_mark(obj->data.macro.literals);
+            gc_mark(obj->data.macro.rules);
+            gc_mark(obj->data.macro.env);
+            break;
+        case CONTINUATION:
+            gc_mark(obj->data.continuation.value);
+            break;
         case COMPOUND_PROC:
             gc_mark(obj->data.compound_proc.parameters);
             gc_mark(obj->data.compound_proc.body);
@@ -52,7 +63,13 @@ static void gc_mark_roots(void) {
     gc_mark(the_empty_list);
     gc_mark(symbol_table);
     gc_mark(quote_symbol);
+    gc_mark(quasiquote_symbol);
+    gc_mark(unquote_symbol);
+    gc_mark(unquote_splicing_symbol);
     gc_mark(define_symbol);
+    gc_mark(define_syntax_symbol);
+    gc_mark(syntax_rules_symbol);
+    gc_mark(ellipsis_symbol);
     gc_mark(set_symbol);
     gc_mark(ok_symbol);
     gc_mark(if_symbol);
@@ -82,6 +99,10 @@ static void gc_sweep(void) {
                 free(obj->data.symbol.value);
             if(obj->type == STRING && obj->data.string.value != NULL)
                 free(obj->data.string.value);
+            if(obj->type == PORT &&
+               obj->data.port.file != NULL &&
+               obj->data.port.close_on_gc)
+                fclose(obj->data.port.file);
             free(obj);
         }
         else {
@@ -96,7 +117,13 @@ object *false_obj = NULL;
 object *the_empty_list = NULL;
 object *symbol_table = NULL;
 object *quote_symbol = NULL;
+object *quasiquote_symbol = NULL;
+object *unquote_symbol = NULL;
+object *unquote_splicing_symbol = NULL;
 object *define_symbol = NULL;
+object *define_syntax_symbol = NULL;
+object *syntax_rules_symbol = NULL;
+object *ellipsis_symbol = NULL;
 object *set_symbol = NULL;
 object *ok_symbol = NULL;
 object *if_symbol = NULL;
@@ -157,6 +184,22 @@ bool is_string(object* obj) {
 
 bool is_pair(object* obj) {
     return obj->type == PAIR ? true : false;
+}
+
+bool is_vector(object* obj) {
+    return obj->type == VECTOR ? true : false;
+}
+
+bool is_port(object* obj) {
+    return obj->type == PORT ? true : false;
+}
+
+bool is_macro(object* obj) {
+    return obj->type == MACRO ? true : false;
+}
+
+bool is_continuation(object* obj) {
+    return obj->type == CONTINUATION ? true : false;
 }
 
 bool is_primitive_proc(object* obj) {
@@ -227,6 +270,13 @@ object* make_fixnum(long value) {
      return obj;
 }
 
+object* make_character(char value) {
+    object* obj = alloc_object();
+    obj->type = CHARACTER;
+    obj->data.character.value = value;
+    return obj;
+}
+
 object* make_string(char* str) {
 
     object* obj = alloc_object();
@@ -252,6 +302,41 @@ object* make_symbol(char* str) {
     obj->data.symbol.value = copy_string(str);
 
     symbol_table = cons(obj, symbol_table);
+    return obj;
+}
+
+object* make_vector(object* elements, size_t length) {
+    object* obj = alloc_object();
+    obj->type = VECTOR;
+    obj->data.vector.elements = elements;
+    obj->data.vector.length = length;
+    return obj;
+}
+
+object* make_port(FILE* file, bool is_input, bool is_output, bool close_on_gc) {
+    object* obj = alloc_object();
+    obj->type = PORT;
+    obj->data.port.file = file;
+    obj->data.port.is_input = is_input;
+    obj->data.port.is_output = is_output;
+    obj->data.port.close_on_gc = close_on_gc;
+    return obj;
+}
+
+object* make_macro(object* literals, object* rules, object* env) {
+    object* obj = alloc_object();
+    obj->type = MACRO;
+    obj->data.macro.literals = literals;
+    obj->data.macro.rules = rules;
+    obj->data.macro.env = env;
+    return obj;
+}
+
+object* make_continuation(void) {
+    object* obj = alloc_object();
+    obj->type = CONTINUATION;
+    obj->data.continuation.active = false;
+    obj->data.continuation.value = NULL;
     return obj;
 }
 

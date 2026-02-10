@@ -10,6 +10,9 @@
 支持的表达式：
 + `quote`
 + `'` (`quote` 简写)
++ `quasiquote` / `` ` ``
++ `unquote` / `,`
++ `unquote-splicing` / `,@`
 + `define`
 + `if`
 + `lambda`
@@ -18,6 +21,7 @@
 + `let`
 + `let*`
 + `letrec`
++ `define-syntax` + `syntax-rules` (常用模式)
 + `...` 
 
 支持的内部过程：
@@ -37,18 +41,29 @@
 + `set-cdr!` 设置列表的表尾
 + `list` 构造列表
 + `eq?` 判断两个列表或原子是否相等
++ `eqv?` / `equal?` 等价判断
 + `null?` 判断是否为空表
 + `boolean?` 判断是否为布尔型
 + `symbol?` 判断是否是符号
 + `integer?` 判断是否为整数
++ `char?` 判断是否为字符
 + `string?` 判断是否为字符串
 + `pair?` 判断是否为序对
++ `vector?` / `vector` / `vector-length` / `vector-ref` / `vector-set!`
++ `vector->list` / `list->vector`
 + `procedure?` 判断是否为内部过程或复合过程
++ `apply` / `map` / `for-each`
++ `call/cc`
 + `number->string` 将整数转换为字符串
 + `string->number` 将字符串转换为整数
 + `symbol->string` 将符号转换为字符串
 + `string->symbol` 将字符串转换为符号
++ `char->integer` / `integer->char`
 + `environment` 查看全局环境中绑定的变量
++ `read` / `write` / `display` / `newline`
++ `open-input-file` / `open-output-file`
++ `close-input-port` / `close-output-port`
++ `current-input-port` / `current-output-port`
 + `load` 加载并执行指定 Scheme 文件
 
 ### Build & Install

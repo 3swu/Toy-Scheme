@@ -7,9 +7,12 @@
 #define SCHEME_OBJECT_H
 
 #include <stdbool.h>
+#include <stdio.h>
+#include <setjmp.h>
 
 typedef enum {THE_EMPTY_LIST, BOOLEAN, SYMBOL,
               FIXNUM, CHARACTER, STRING, PAIR,
+              VECTOR, PORT, MACRO, CONTINUATION,
               PRIMITIVE_PROC, COMPOUND_PROC}
               object_type;
 
@@ -38,6 +41,26 @@ typedef struct object {
             struct object* cdr;
         } pair;
         struct {
+            struct object* elements;
+            size_t length;
+        } vector;
+        struct {
+            FILE* file;
+            bool is_input;
+            bool is_output;
+            bool close_on_gc;
+        } port;
+        struct {
+            struct object* literals;
+            struct object* rules;
+            struct object* env;
+        } macro;
+        struct {
+            jmp_buf return_point;
+            bool active;
+            struct object* value;
+        } continuation;
+        struct {
             struct object* (*fun) (struct object* argument);
         } primitive_proc;
         struct {
@@ -64,6 +87,14 @@ extern bool is_string        (object* obj);
 
 extern bool is_pair          (object* obj);
 
+extern bool is_vector        (object* obj);
+
+extern bool is_port          (object* obj);
+
+extern bool is_macro         (object* obj);
+
+extern bool is_continuation  (object* obj);
+
 extern bool is_primitive_proc(object* obj);
 
 extern bool is_compound_proc (object* obj);
@@ -89,9 +120,19 @@ extern object* make_boolean(bool value);
 
 extern object* make_fixnum(long value);
 
+extern object* make_character(char value);
+
 extern object* make_string(char* str);
 
 extern object* make_symbol(char* str);
+
+extern object* make_vector(object* elements, size_t length);
+
+extern object* make_port(FILE* file, bool is_input, bool is_output, bool close_on_gc);
+
+extern object* make_macro(object* literals, object* rules, object* env);
+
+extern object* make_continuation(void);
 
 extern void gc_collect(void);
 
@@ -105,7 +146,13 @@ extern object *false_obj;
 extern object *the_empty_list;
 extern object *symbol_table;
 extern object *quote_symbol;
+extern object *quasiquote_symbol;
+extern object *unquote_symbol;
+extern object *unquote_splicing_symbol;
 extern object *define_symbol;
+extern object *define_syntax_symbol;
+extern object *syntax_rules_symbol;
+extern object *ellipsis_symbol;
 extern object *set_symbol;
 extern object *ok_symbol;
 extern object *if_symbol;
