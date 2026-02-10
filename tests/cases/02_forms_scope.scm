@@ -1,0 +1,10 @@
+(define x 1)
+(set! x (+ x 2))
+x
+(if 1 42 0)
+(and #t 1 2)
+(or #f 7)
+(or #f #f 9)
+(let ((a 3) (b 4)) (+ a b))
+(cond ((> 1 2) 0) ((< 1 2) 99) (else 1))
+((lambda (n) (+ n 1)) 41)

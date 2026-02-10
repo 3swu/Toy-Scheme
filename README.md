@@ -49,22 +49,36 @@
 
 ### Build & Install
 ---
-`clone`项目并且在项目内执行：
+`clone` 项目后在项目根目录执行：
 ``` bash
-sudo chmod +x ./INSTALL
-sudo ./INSTALL
+chmod +x ./COMPILE ./INSTALL ./TEST ./scripts/*.sh
+
+# 编译（输出在 ./build）
+./COMPILE
+
+# 安装到 /usr/local/bin（需要管理员权限）
+USE_SUDO=1 ./INSTALL
 ```
 
 ### Usage
 ---
 直接进入REPL环境
 ```bash
-./Toy-Scheme
+./build/Toy-Scheme
 ```
-解释指定的源文件，使用命令`./Toy-Scheme -f [file]`
+解释指定的源文件，使用命令`./build/Toy-Scheme -f [file]`
 ```bash
-./Toy-Scheme -f hello.scm
+./build/Toy-Scheme -f hello.scm
 ```
+
+### Test
+---
+运行完整测试集：
+```bash
+./TEST
+```
+测试中间产物会放在项目目录下的 `./test-artifacts/`。
+
 ### Requirement
 ---
 为了编译项目，需要有以下的组件：

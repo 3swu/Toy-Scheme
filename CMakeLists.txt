@@ -3,4 +3,19 @@ project(Scheme C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(Toy-Scheme main.c src/header/object.h src/object.c src/header/error.h src/error.c src/header/read.h src/read.c src/header/eval.h src/eval.c src/header/environment.h src/environment.c src/header/apply.h src/apply.c src/header/builtin.h src/builtin.c src/header/write.h src/write.c)
+set(TOY_SCHEME_SOURCES
+    main.c
+    src/object.c
+    src/error.c
+    src/read.c
+    src/eval.c
+    src/environment.c
+    src/apply.c
+    src/builtin.c
+    src/write.c
+)
+
+add_executable(Toy-Scheme ${TOY_SCHEME_SOURCES})
+
+install(TARGETS Toy-Scheme
+        RUNTIME DESTINATION bin)

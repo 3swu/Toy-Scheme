@@ -13,3 +13,5 @@
 /Toy-Scheme
 /cmake-build-*/
 /build/
+/test-artifacts/
+/.local-install/

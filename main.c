@@ -42,6 +42,7 @@ void repl() {
         else {
             write(stdout, result);
             printf("\n");
+            fflush(stdout);
         }
         gc_collect();
     }
@@ -86,6 +87,7 @@ static void eval_source_file(FILE* source_file) {
         if(result != ok_symbol) {
             write(stdout, result);
             printf("\n");
+            fflush(stdout);
         }
         gc_collect();
     }
