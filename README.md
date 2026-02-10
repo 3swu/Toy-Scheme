@@ -1,6 +1,6 @@
 # Toy-Scheme
 
-![](https://img.shields.io/badge/platform-Linux-flat.svg) ![](https://img.shields.io/badge/language-C-orange.svg) ![](https://img.shields.io/badge/license-MIT-000000.svg)
+![](https://img.shields.io/badge/platform-Linux%20%7C%20macOS-flat.svg) ![](https://img.shields.io/badge/language-C-orange.svg) ![](https://img.shields.io/badge/license-MIT-000000.svg)
 
 
 这是一个Scheme语言解释器，使用C语言实现了大部分R5RS的语法特性,参考[计算机程序的构造和解释](https://mitpress.mit.edu/sites/default/files/sicp/full-text/book/book.html)中元解释器的原理。 
@@ -68,7 +68,7 @@ sudo ./INSTALL
 ### Requirement
 ---
 为了编译项目，需要有以下的组件：
-+ GCC
++ GCC / Clang
 + Cmake
 
 ### Author

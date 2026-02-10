@@ -36,7 +36,7 @@ typedef struct object {
             struct object* cdr;
         } pair;
         struct {
-            struct objetc* (*fun) (struct object* arguement);
+            struct object* (*fun) (struct object* argument);
         } primitive_proc;
         struct {
             struct object* parameters;
@@ -96,24 +96,24 @@ extern object* make_symbol_table();
 
 extern object* get_the_empty_environment();
 
-object *true_obj;
-object *false_obj;
-object *the_empty_list;
-object *symbol_table;
-object *quote_symbol;
-object *define_symbol;
-object *set_symbol;
-object *ok_symbol;
-object *if_symbol;
-object *lambda_symbol;
-object *begin_symbol;
-object *cond_symbol;
-object *else_symbol;
-object *let_symbol;
-object *and_symbol;
-object *or_symbol;
-object *eof_object;
-object *the_empty_environment;
-object *the_global_environment;
+extern object *true_obj;
+extern object *false_obj;
+extern object *the_empty_list;
+extern object *symbol_table;
+extern object *quote_symbol;
+extern object *define_symbol;
+extern object *set_symbol;
+extern object *ok_symbol;
+extern object *if_symbol;
+extern object *lambda_symbol;
+extern object *begin_symbol;
+extern object *cond_symbol;
+extern object *else_symbol;
+extern object *let_symbol;
+extern object *and_symbol;
+extern object *or_symbol;
+extern object *eof_object;
+extern object *the_empty_environment;
+extern object *the_global_environment;
 
 #endif //SCHEME_OBJECT_H

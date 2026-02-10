@@ -8,13 +8,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include <ctype.h>
 
 #define MAXSIZE 10240
 
 char* read(FILE* in_stream) { /* from in_stream to buffer */
-    char *buf, ch;
+    char *buf;
+    int ch;
     int i = 0;
 
     buf = (char*) malloc(MAXSIZE * sizeof(char));
@@ -22,19 +23,26 @@ char* read(FILE* in_stream) { /* from in_stream to buffer */
         error_handle(stderr, "out of memory", EXIT_FAILURE);
 
     if(in_stream == stdin) {
-        while((ch = (char)getc(in_stream)) != EOF && ch != '\n') {
-            buf[i++] = ch;
+        ch = getc(in_stream);
+        if(ch == EOF) {
+            free(buf);
+            return NULL;
+        }
+
+        while(ch != EOF && ch != '\n') {
+            buf[i++] = (char)ch;
 
             if(i >= MAXSIZE) {
                 buf = (char*) realloc(buf, MAXSIZE * 10 * sizeof(char));
                 if(buf == NULL)
                     error_handle(stderr, "out of memory", EXIT_FAILURE);
             }
+            ch = getc(in_stream);
         }
     }
     else {
-        while((ch = (char)getc(in_stream)) != EOF) {
-            buf[i++] = ch;
+        while((ch = getc(in_stream)) != EOF) {
+            buf[i++] = (char)ch;
 
             if(i >= MAXSIZE) {
                 buf = (char*) realloc(buf, MAXSIZE * 10 * sizeof(char));
@@ -182,7 +190,7 @@ object* parse(token_list* list) {
     char error_msg[TOKEN_MAX + 50];
     sprintf(error_msg, "unexcepted symbol : %s", token_value);
     error_handle(stderr, error_msg, EXIT_FAILURE);
-
+    return NULL;
 }
 
 object* parse_pair(token_list* list) {
@@ -236,20 +244,29 @@ object* parse_string(char* str) {
     int i = 0;
     for(; str[i + 1] != '"'; i++)
         s[i] = str[i + 1];
-    s[i + 1] = '\0';
+    s[i] = '\0';
 
     return make_string(s);
 }
 
 object* reader(FILE* in) {
-    char* buf = buf_pre_handle(read(in));
-    token* t = gen_token(buf);
+    while(true) {
+        char* pre_buf = read(in);
+        if(pre_buf == NULL)
+            return NULL;
 
-//    for(token* p = t; p != NULL; p = p->next)
-//        printf("%s\n", p->value);
+        char* buf = buf_pre_handle(pre_buf);
+        token* t = gen_token(buf);
 
-    token_list* list = gen_token_list(t);
-    object* obj = parse(list);
+//        for(token* p = t; p != NULL; p = p->next)
+//            printf("%s\n", p->value);
 
-    return obj;
+        token_list* list = gen_token_list(t);
+        if(list->token_pointer == NULL) {
+            if(in == stdin)
+                continue;
+            return NULL;
+        }
+        return parse(list);
+    }
 }

@@ -26,6 +26,7 @@ object* lookup_variable_value(object* var, object* env) {
     char error_msg[TOKEN_MAX + 50];
     sprintf(error_msg, "undefined variable: %s\n", var->data.symbol.value);
     error_handle(stderr, error_msg, EXIT_FAILURE);
+    return NULL;
 }
 
 object* extend_environment(object* variables,
@@ -40,7 +41,7 @@ void set_variable_value(object* var, object* value, object* env) {
         object* vars = frame_variables(frame);
         object* vals = frame_values(frame);
 
-        while(!is_empty_list(frame)) {
+        while(!is_empty_list(vars)) {
             if(var == car(vars)){
                 set_car(vals, value);
                 return;

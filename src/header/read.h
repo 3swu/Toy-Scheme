@@ -3,7 +3,7 @@
 //
 // read source code
 
-#include <bits/types/FILE.h>
+#include <stdio.h>
 #include "object.h"
 
 #ifndef SCHEME_READ_H

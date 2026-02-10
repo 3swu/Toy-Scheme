@@ -35,7 +35,7 @@ object* eval(object* exp, object* env) {
         return eval_definition(exp, env);
     }
     else if(is_if(exp)) {
-        eval_if(exp, env);
+        return eval_if(exp, env);
     }
     else if(is_lambda(exp)) {
         return make_procedure(lambda_parameters(exp),
@@ -43,13 +43,13 @@ object* eval(object* exp, object* env) {
                               env);
     }
     else if(is_begin(exp)) {
-        eval_sequence(begin_actions(exp), env);
+        return eval_sequence(begin_actions(exp), env);
     }
     else if(is_cond(exp)) {
-        eval(cond_to_if(exp), env);
+        return eval(cond_to_if(exp), env);
     }
     else if(is_let(exp)) {
-        eval(let_to_application(exp), env);
+        return eval(let_to_application(exp), env);
     }
     else if(is_and(exp)) {
         exp = and_tests(exp);
@@ -80,8 +80,8 @@ object* eval(object* exp, object* env) {
         return eval(exp, env);
     }
     else if(is_application(exp)) {
-        apply(eval(operator(exp), env),
-                list_of_values(operands(exp), env));
+        return apply(eval(operator(exp), env),
+                     list_of_values(operands(exp), env));
     }
     else {
         error_handle_with_object(stderr,
@@ -89,6 +89,7 @@ object* eval(object* exp, object* env) {
                                  EXIT_FAILURE,
                                  exp);
     }
+    return NULL;
 }
 
 bool is_self_evaluating(object* exp) {
@@ -169,11 +170,11 @@ object* eval_definition(object* exp, object* env) {
     return ok_symbol;
 }
 
-void eval_if(object* exp, object* env) {
+object* eval_if(object* exp, object* env) {
     if(is_true(eval(if_predicate(exp), env)))
-        eval(if_consequent(exp), env);
+        return eval(if_consequent(exp), env);
     else
-        eval(if_alternative(exp), env);
+        return eval(if_alternative(exp), env);
 }
 
 object* make_procedure(object* parameters, object* body, object* env) {
@@ -188,12 +189,12 @@ object* lambda_body(object* exp) {
     return cddr(exp);
 }
 
-void eval_sequence(object* exp, object* env) {
+object* eval_sequence(object* exp, object* env) {
     if(is_last_exp(exp))
+        return eval(first_exp(exp), env);
+    else {
         eval(first_exp(exp), env);
-    else{
-        eval(first_exp(exp), env);
-        eval_sequence(rest_exp(exp), env);
+        return eval_sequence(rest_exp(exp), env);
     }
 }
 
@@ -314,6 +315,7 @@ object* expand_clause(object* clauses) {
                            expand_clause(rest));
         }
     }
+    return NULL;
 }
 
 object* sequence_to_exp(object* seq) {

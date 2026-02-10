@@ -2,7 +2,7 @@
 // Created by wulei on 19-4-9.
 //
 
-#include <bits/types/FILE.h>
+#include <stdio.h>
 #include "object.h"
 
 #ifndef SCHEME_WRITE_H

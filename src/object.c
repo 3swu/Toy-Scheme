@@ -4,9 +4,29 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <memory.h>
+#include <string.h>
 #include "header/object.h"
 #include "header/error.h"
+
+object *true_obj = NULL;
+object *false_obj = NULL;
+object *the_empty_list = NULL;
+object *symbol_table = NULL;
+object *quote_symbol = NULL;
+object *define_symbol = NULL;
+object *set_symbol = NULL;
+object *ok_symbol = NULL;
+object *if_symbol = NULL;
+object *lambda_symbol = NULL;
+object *begin_symbol = NULL;
+object *cond_symbol = NULL;
+object *else_symbol = NULL;
+object *let_symbol = NULL;
+object *and_symbol = NULL;
+object *or_symbol = NULL;
+object *eof_object = NULL;
+object *the_empty_environment = NULL;
+object *the_global_environment = NULL;
 
 object* alloc_object() {
     object* obj = (object*) malloc (sizeof(object));
@@ -14,6 +34,7 @@ object* alloc_object() {
     if(obj == NULL){
         error_handle(stderr, "out of memory", EXIT_FAILURE);
     }
+    return obj;
 }
 
 bool is_empty_list(object* obj) {

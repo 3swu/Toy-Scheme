@@ -46,7 +46,7 @@ extern object* eval_assignment(object* exp, object* env);
 
 extern object* eval_definition(object* exp, object* env);
 
-extern void    eval_if(object* exp, object* env);
+extern object* eval_if(object* exp, object* env);
 
 extern object* make_procedure(object* parameters, object* body, object* env);
 
@@ -54,7 +54,7 @@ extern object* lambda_parameters(object* exp);
 
 extern object* lambda_body(object* exp);
 
-extern void    eval_sequence(object* exp, object* env);
+extern object* eval_sequence(object* exp, object* env);
 
 extern object* begin_actions(object* exp);
 

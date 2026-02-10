@@ -3,12 +3,13 @@
 //
 // built in procedures and objects
 
-#include <memory.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "header/builtin.h"
 #include "header/object.h"
 #include "header/environment.h"
+#include "header/error.h"
 
 void init_built_in() {
     true_obj = alloc_object(); /* init true_obj */
@@ -223,9 +224,15 @@ static object* is_procedure_procedure(object* arguments) {
 
 static object* number_to_string_procedure(object* arguments) {
     char buffer[100];
+    char* string_value;
 
     sprintf(buffer, "%ld", car(arguments)->data.fixnum.value);
-    return make_string(buffer);
+    string_value = (char*) malloc((strlen(buffer) + 1) * sizeof(char));
+    if(string_value == NULL)
+        error_handle(stderr, "out of memory", EXIT_FAILURE);
+
+    strcpy(string_value, buffer);
+    return make_string(string_value);
 }
 
 static object* string_to_number_procedure(object* arguments) {
